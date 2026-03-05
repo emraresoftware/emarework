@@ -1,0 +1,45 @@
+# Hive Coordinator - Yapılandırma
+
+# Sistem
+system:
+  name: "Hive Coordinator"
+  version: "1.0.0"
+  
+hierarchy:
+  depth: 10              # Toplam seviye sayısı
+  branch_factor: 10      # Her düğümün çocuk sayısı
+  
+# Performans
+performance:
+  aggregation_interval_sec: 30    # Durum toplama sıklığı
+  heartbeat_timeout_sec: 300      # Heartbeat zaman aşımı
+  max_cascade_depth: 10           # Max yayılma derinliği
+  batch_register_max_depth: 5     # Toplu kayıt max derinliği
+  
+# Yük Dengeleme
+load_balancing:
+  overload_threshold_pct: 90      # Aşırı yük eşiği
+  rebalance_trigger_pct: 30       # Dengeleme tetikleme farkı
+  min_efficiency_threshold: 0.5   # Min verimlilik eşiği
+  
+# Mesajlaşma
+messaging:
+  default_ttl_sec: 3600           # Varsayılan mesaj ömrü
+  max_broadcast_depth: 10         # Max yayın derinliği
+  retry_count: 3                  # Başarısız teslimat deneme sayısı
+  retry_delay_sec: 5              # Yeniden deneme aralığı
+
+# Veritabanı
+database:
+  url: "postgresql+asyncpg://hive:hive_secret@localhost:5432/hive_coordinator"
+  pool_size: 20
+  max_overflow: 10
+  
+# Redis
+redis:
+  url: "redis://localhost:6379/0"
+  
+# Loglama
+logging:
+  level: "INFO"
+  format: "json"

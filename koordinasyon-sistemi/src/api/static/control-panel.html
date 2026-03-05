@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emare Work - Proje Dağıtım Kontrol Paneli</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .tag-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            min-height: 50px;
+        }
+
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tag .remove {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .task-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .task-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .task-badge {
+            background: #667eea;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+        }
+
+        .task-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .task-detail {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .worker-selector {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .worker-chip {
+            border: 2px solid #e0e0e0;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .worker-chip:hover {
+            border-color: #667eea;
+        }
+
+        .worker-chip.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .worker-chip .priority {
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-in-progress { background: #dbeafe; color: #1e3a8a; }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .status-failed { background: #fee2e2; color: #991b1b; }
+
+        .hidden {
+            display: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🚀 Emare Work - Proje Dağıtım Kontrol Paneli</h1>
+            <p>Yazılım projelerini AI worker'lara manuel olarak dağıt ve takip et</p>
+        </div>
+
+        <!-- Adım 1: Proje Tanımlama -->
+        <div id="step1" class="section">
+            <h2>📝 Adım 1: Projeyi Tanımla</h2>
+            
+            <div class="form-group">
+                <label>Proje Adı *</label>
+                <input type="text" id="projectName" placeholder="Örn: E-Ticaret SaaS Platformu">
+            </div>
+
+            <div class="form-group">
+                <label>Açıklama *</label>
+                <textarea id="projectDesc" placeholder="Proje hakkında kısa açıklama..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Teknoloji Stack (Enter ile ekle)</label>
+                <div class="tag-input" id="techStack">
+                    <input type="text" id="techInput" placeholder="Örn: FastAPI, React, PostgreSQL..." 
+                           style="border:none;flex:1;min-width:200px;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Gereksinimler (Enter ile ekle)</label>
+                <div class="tag-input" id="requirements">
+                    <input type="text" id="reqInput" placeholder="Örn: RESTful API, Admin Panel..." 
+                           style="border:none;flex:1;min-width:200px;">
+                </div>
+            </div>
+
+            <button onclick="analyzeProject()">
+                🔍 Projeyi Analiz Et ve Task'lara Böl
+            </button>
+        </div>
+
+        <!-- Adım 2: Task Atama (Hidden) -->
+        <div id="step2" class="section hidden">
+            <h2>🎯 Adım 2: Görevleri Yazılım Dervişlerine Ata</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTasks">0</div>
+                    <div class="stat-label">Toplam Görev</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="estimatedHours">0</div>
+                    <div class="stat-label">Tahmini Süre (saat)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="availableWorkers">0</div>
+                    <div class="stat-label">🧙‍♂️ Hazır Dervişler</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="assignedCount">0</div>
+                    <div class="stat-label">Atanan Görev</div>
+                </div>
+            </div>
+
+            <div id="analysisLoading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Proje analiz ediliyor...</p>
+            </div>
+
+            <div id="tasksList"></div>
+
+            <button onclick="startProject()" id="startBtn" disabled>
+                🚀 Projeyi Başlat (Dervişler Göreve)
+            </button>
+        </div>
+
+        <!-- Adım 3: İlerleme Takibi (Hidden) -->
+        <div id="step3" class="section hidden">
+            <h2>📊 Adım 3: Dervişleri İzle</h2>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressBar" style="width: 0%">0%</div>
+            </div>
+
+            <div id="projectStatus"></div>
+        </div>
+    </div>
+
+    <script>
+        let analysisData = null;
+        let taskAssignments = {};
+        let projectId = null;
+
+        // Tag input handlers
+        const techInput = document.getElementById('techInput');
+        const reqInput = document.getElementById('reqInput');
+        const techStack = document.getElementById('techStack');
+        const requirements = document.getElementById('requirements');
+
+        techInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && techInput.value.trim()) {
+                addTag(techStack, techInput.value.trim());
+                techInput.value = '';
+            }
+        });
+
+        reqInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && reqInput.value.trim()) {
+                addTag(requirements, reqInput.value.trim());
+                reqInput.value = '';
+            }
+        });
+
+        function addTag(container, text) {
+            const tag = document.createElement('div');
+            tag.className = 'tag';
+            tag.innerHTML = `
+                ${text}
+                <span class="remove" onclick="this.parentElement.remove()">×</span>
+            `;
+            container.insertBefore(tag, container.querySelector('input'));
+        }
+
+        function getTags(container) {
+            return Array.from(container.querySelectorAll('.tag'))
+                .map(tag => tag.textContent.replace('×', '').trim());
+        }
+
+        async function analyzeProject() {
+            const name = document.getElementById('projectName').value;
+            const description = document.getElementById('projectDesc').value;
+            const tech = getTags(techStack);
+            const reqs = getTags(requirements);
+
+            if (!name || !description) {
+                alert('Lütfen proje adı ve açıklama girin!');
+                return;
+            }
+
+            document.getElementById('analysisLoading').classList.remove('hidden');
+            document.getElementById('step1').style.opacity = '0.5';
+
+            try {
+                const response = await fetch('/projects/analyze', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name, description,
+                        tech_stack: tech,
+                        requirements: reqs
+                    })
+                });
+
+                analysisData = await response.json();
+                
+                document.getElementById('totalTasks').textContent = analysisData.analysis.total_tasks;
+                document.getElementById('estimatedHours').textContent = 
+                    analysisData.analysis.estimated_hours.toFixed(0);
+                document.getElementById('availableWorkers').textContent = 
+                    analysisData.workforce_availability.available_workers;
+
+                renderTasks();
+                
+                document.getElementById('step2').classList.remove('hidden');
+                document.getElementById('analysisLoading').classList.add('hidden');
+                document.getElementById('step1').style.opacity = '1';
+
+            } catch (error) {
+                alert('Hata: ' + error.message);
+                document.getElementById('analysisLoading').classList.add('hidden');
+                document.getElementById('step1').style.opacity = '1';
+            }
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('tasksList');
+            container.innerHTML = '';
+
+            analysisData.task_assignments.forEach((assignment, index) => {
+                const task = assignment.task;
+                const workers = assignment.recommended_workers;
+
+                const card = document.createElement('div');
+                card.className = 'task-card';
+                card.innerHTML = `
+                    <div class="task-header">
+                        <div class="task-title">${index + 1}. ${task.title}</div>
+                        <div class="task-badge">${task.type}</div>
+                    </div>
+                    
+                    <div class="task-details">
+                        <div class="task-detail">
+                            ⏱️ <strong>${task.estimated_hours}h</strong> tahmini süre
+                        </div>
+                        <div class="task-detail">
+                            🎯 <strong>${task.requirements.join(', ')}</strong>
+                        </div>
+                    </div>
+
+                    <div>
+                        <strong>🧙‍♂️ Derviş Seç:</strong>
+                        <div class="worker-selector" id="workers-${task.id}">
+                            ${workers.map(w => `
+                                <div class="worker-chip" onclick="selectWorker('${task.id}', '${w.id}', this)">
+                                    ${w.name}
+                                    <div class="priority">Öncelik: ${w.priority}/10</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function selectWorker(taskId, workerId, element) {
+            // Aynı task için diğer seçimleri kaldır
+            const siblings = element.parentElement.querySelectorAll('.worker-chip');
+            siblings.forEach(s => s.classList.remove('selected'));
+            
+            element.classList.add('selected');
+            taskAssignments[taskId] = workerId;
+
+            // Atanan task sayısını güncelle
+            document.getElementById('assignedCount').textContent = 
+                Object.keys(taskAssignments).length;
+
+            // Tüm task'lar atandıysa başlat butonunu aktifleştir
+            if (Object.keys(taskAssignments).length === analysisData.task_assignments.length) {
+                document.getElementById('startBtn').disabled = false;
+            }
+        }
+
+        async function startProject() {
+            if (!confirm('Projeyi başlatmak istediğinize emin misiniz?')) {
+                return;
+            }
+
+            document.getElementById('step2').style.opacity = '0.5';
+            document.getElementById('startBtn').disabled = true;
+
+            try {
+                const response = await fetch('/projects', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: document.getElementById('projectName').value,
+                        description: document.getElementById('projectDesc').value,
+                        tech_stack: getTags(techStack),
+                        requirements: getTags(requirements)
+                    })
+                });
+
+                const result = await response.json();
+                projectId = result.project_id;
+
+                document.getElementById('step3').classList.remove('hidden');
+                trackProgress();
+
+            } catch (error) {
+                alert('Hata: ' + error.message);
+                document.getElementById('step2').style.opacity = '1';
+                document.getElementById('startBtn').disabled = false;
+            }
+        }
+
+        async function trackProgress() {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/projects/${projectId}`);
+                    const status = await response.json();
+
+                    const progress = status.progress.percentage;
+                    document.getElementById('progressBar').style.width = progress + '%';
+                    document.getElementById('progressBar').textContent = progress.toFixed(0) + '%';
+
+                    renderProjectStatus(status);
+
+                    if (status.status === 'completed') {
+                        clearInterval(interval);
+                        alert('🎉 Proje tamamlandı!');
+                    }
+
+                } catch (error) {
+                    console.error('Status check failed:', error);
+                }
+            }, 2000);
+        }
+
+        function renderProjectStatus(status) {
+            const container = document.getElementById('projectStatus');
+            container.innerHTML = `
+                <h3>📋 Task Durumları:</h3>
+                ${status.assignments.map((a, i) => `
+                    <div style="padding: 1rem; margin: 0.5rem 0; background: #f8f9fa; border-radius: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong>${i + 1}. ${a.task_title}</strong>
+                            <span class="status-badge status-${a.status.replace('_', '-')}">${a.status}</span>
+                        </div>
+                        <div style="margin-top: 0.5rem; color: #666; font-size: 0.9rem;">
+                            🧙‍♂️ ${a.worker_name} 
+                            ${a.duration_seconds ? `| ⏱️ ${(a.duration_seconds / 60).toFixed(1)} dakika` : ''}
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+# Hive Coordinator - Docker Yapılandırması
+# Tam dağıtık ortam: API + PostgreSQL + Redis + Celery Worker
+
+version: '3.9'
+
+services:
+  # ─── Ana API Sunucusu ─────────────────────────────────────────────
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://hive:hive_secret@postgres:5432/hive_coordinator
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - SECRET_KEY=production-change-this-secret-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./.env:/app/.env
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── Celery Worker (Asenkron Görev İşleme) ────────────────────────
+  worker:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://hive:hive_secret@postgres:5432/hive_coordinator
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - LOG_LEVEL=INFO
+    depends_on:
+      - api
+      - postgres
+      - redis
+    volumes:
+      - ./src:/app/src
+      - ./.env:/app/.env
+    command: celery -A src.celery_app worker --loglevel=info --concurrency=10
+    restart: unless-stopped
+    deploy:
+      replicas: 3  # 3 worker instance - büyük ölçek için artırılabilir
+
+  # ─── Celery Beat (Periyodik Görevler) ──────────────────────────────
+  scheduler:
+    build: .
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://hive:hive_secret@postgres:5432/hive_coordinator
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=redis://redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - LOG_LEVEL=INFO
+    depends_on:
+      - api
+      - postgres
+      - redis
+    volumes:
+      - ./src:/app/src
+      - ./.env:/app/.env
+    command: celery -A src.celery_app beat --loglevel=info
+    restart: unless-stopped
+
+  # ─── PostgreSQL (Ana Veritabanı) ───────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: hive_coordinator
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis (Mesaj Kuyruğu + Cache) ────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+
+volumes:
+  postgres_data:
+  redis_data:

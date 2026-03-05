@@ -1,0 +1,14 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Type checker configuration - Suppress known runtime-safe warnings
+# ═══════════════════════════════════════════════════════════════════════════
+
+# SQLAlchemy model properties (Column[T]) can be used as T in queries
+# Redis and Celery packages are runtime dependencies
+# pydantic_settings is handled with try/except fallback
+
+[tool.pyright]
+reportMissingImports = false
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false

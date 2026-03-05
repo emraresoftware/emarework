@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emare Work - Gelişmiş Kontrol Paneli</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --brand-500: #6366f1;
+            --brand-600: #4f46e5;
+            --purple-600: #9333ea;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            --green-500: #22c55e;
+            --amber-500: #f59e0b;
+            --red-500: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: white;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s;
+        }
+
+        body.dark-mode .sidebar {
+            background: var(--gray-800);
+            color: white;
+        }
+
+        .sidebar-header {
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--brand-500), var(--purple-600));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--brand-600), var(--purple-600));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .theme-toggle {
+            background: var(--gray-100);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        body.dark-mode .theme-toggle {
+            background: var(--gray-700);
+            color: white;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.05);
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            color: var(--gray-600);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        body.dark-mode .nav-link {
+            color: var(--gray-300);
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: linear-gradient(135deg, var(--brand-500), var(--purple-600));
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background: white;
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        body.dark-mode .top-bar {
+            background: var(--gray-800);
+            color: white;
+        }
+
+        .search-bar {
+            flex: 1;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        body.dark-mode .search-bar input {
+            background: var(--gray-700);
+            border-color: var(--gray-600);
+            color: white;
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--gray-100);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        body.dark-mode .icon-btn {
+            background: var(--gray-700);
+            color: white;
+        }
+
+        .icon-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .icon-btn .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--red-500);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        body.dark-mode .stat-card {
+            background: var(--gray-800);
+            color: white;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .stat-icon.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .stat-icon.green { background: linear-gradient(135deg, #22c55e, #15803d); }
+        .stat-icon.purple { background: linear-gradient(135deg, var(--brand-500), var(--purple-600)); }
+        .stat-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--gray-900);
+        }
+
+        body.dark-mode .stat-value {
+            color: white;
+        }
+
+        .stat-label {
+            color: var(--gray-600);
+            font-size: 0.9rem;
+        }
+
+        body.dark-mode .stat-label {
+            color: var(--gray-400);
+        }
+
+        .stat-change {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .stat-change.positive { color: var(--green-500); }
+        .stat-change.negative { color: var(--red-500); }
+
+        .section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        body.dark-mode .section {
+            background: var(--gray-800);
+            color: white;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--gray-900);
+        }
+
+        body.dark-mode .section-title {
+            color: white;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--gray-200);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+
+        body.dark-mode .filter-btn {
+            background: var(--gray-700);
+            border-color: var(--gray-600);
+            color: white;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, var(--brand-500), var(--purple-600));
+            color: white;
+            border-color: transparent;
+        }
+
+        .workers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .worker-card {
+            background: var(--gray-50);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 2px solid var(--gray-200);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        body.dark-mode .worker-card {
+            background: var(--gray-700);
+            border-color: var(--gray-600);
+        }
+
+        .worker-card:hover {
+            border-color: var(--brand-500);
+            transform: translateY(-3px);
+        }
+
+        .worker-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .worker-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--brand-500), var(--purple-600));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .worker-info h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .worker-status {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .worker-status.available { background: #d1fae5; color: #065f46; }
+        .worker-status.busy { background: #fef3c7; color: #92400e; }
+        .worker-status.offline { background: #fee2e2; color: #991b1b; }
+
+        .worker-expertise {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .expertise-tag {
+            background: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--brand-600);
+            font-weight: 500;
+        }
+
+        body.dark-mode .expertise-tag {
+            background: var(--gray-600);
+            color: white;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--gray-200);
+        }
+
+        body.dark-mode .timeline::before {
+            background: var(--gray-600);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 2rem;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -2.5rem;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--brand-500);
+            border: 3px solid white;
+        }
+
+        body.dark-mode .timeline-dot {
+            border-color: var(--gray-800);
+        }
+
+        .timeline-dot.completed { background: var(--green-500); }
+        .timeline-dot.in-progress { background: var(--amber-500); animation: pulse 2s infinite; }
+        .timeline-dot.pending { background: var(--gray-300); }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+
+        .timeline-content {
+            background: var(--gray-50);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        body.dark-mode .timeline-content {
+            background: var(--gray-700);
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-meta {
+            font-size: 0.85rem;
+            color: var(--gray-600);
+        }
+
+        body.dark-mode .timeline-meta {
+            color: var(--gray-400);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+
+        .tab-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        body.dark-mode .tab-group {
+            border-color: var(--gray-600);
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: var(--gray-600);
+            transition: all 0.2s;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+        }
+
+        body.dark-mode .tab {
+            color: var(--gray-400);
+        }
+
+        .tab.active {
+            color: var(--brand-600);
+            border-bottom-color: var(--brand-600);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--gray-400);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--brand-500), var(--purple-600));
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .project-card {
+            background: var(--gray-50);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border-left: 4px solid var(--brand-500);
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        body.dark-mode .project-card {
+            background: var(--gray-700);
+        }
+
+        .project-card:hover {
+            transform: translateX(5px);
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .project-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        body.dark-mode .progress-info {
+            color: var(--gray-400);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        body.dark-mode .progress-bar {
+            background: var(--gray-600);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--brand-500), var(--purple-600));
+            transition: width 0.5s;
+            border-radius: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        body.dark-mode .modal-content {
+            background: var(--gray-800);
+            color: white;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-600);
+        }
+
+        body.dark-mode .modal-close {
+            color: var(--gray-400);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .workers-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">EW</div>
+                <div class="logo-text">Emare Work</div>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <i class="fas fa-moon"></i>
+                <span id="theme-text">Dark Mode</span>
+            </button>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a class="nav-link active" onclick="switchView('dashboard')">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="switchView('projects')">
+                    <i class="fas fa-folder"></i>
+                    <span>Projeler</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="switchView('workers')">
+                    <i class="fas fa-users"></i>
+                    <span>Yazılım Dervişleri</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="switchView('tasks')">
+                    <i class="fas fa-tasks"></i>
+                    <span>Görevler</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="switchView('analytics')">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="switchView('logs')">
+                    <i class="fas fa-terminal"></i>
+                    <span>Logs</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/control-panel">
+                    <i class="fas fa-cog"></i>
+                    <span>Basit Panel</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Proje, task veya AI worker ara...">
+            </div>
+            <div class="user-actions">
+                <button class="icon-btn" onclick="showNotifications()">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </button>
+                <button class="icon-btn" onclick="exportData()">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="icon-btn">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view">
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Aktif Projeler</div>
+                            <div class="stat-value" id="active-projects">0</div>
+                        </div>
+                        <div class="stat-icon blue">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>12% bu hafta</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Aktif Dervişler</div>
+                            <div class="stat-value" id="active-ai">0</div>
+                        </div>
+                        <div class="stat-icon green">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>21/21 hazır</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Tamamlanan Task</div>
+                            <div class="stat-value" id="completed-tasks">0</div>
+                        </div>
+                        <div class="stat-icon purple">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>45 bu hafta</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-label">Ortalama Süre</div>
+                            <div class="stat-value" id="avg-time">0<span style="font-size:1rem">h</span></div>
+                        </div>
+                        <div class="stat-icon orange">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change negative">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>8% daha hızlı</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Performans Analizi</h2>
+                    <div class="filter-group">
+                        <button class="filter-btn active" onclick="updateChartPeriod('day')">Bugün</button>
+                        <button class="filter-btn" onclick="updateChartPeriod('week')">Bu Hafta</button>
+                        <button class="filter-btn" onclick="updateChartPeriod('month')">Bu Ay</button>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Görev Tamamlama Hızı</h3>
+                        <div class="chart-container">
+                            <canvas id="taskChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 1rem; font-size: 1.1rem;">Derviş Kullanımı</h3>
+                        <div class="chart-container">
+                            <canvas id="workerChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Son Aktiviteler</h2>
+                    <button class="btn-primary" onclick="refreshActivity()">
+                        <i class="fas fa-sync"></i>
+                        Yenile
+                    </button>
+                </div>
+                <div class="timeline" id="activity-timeline">
+                    <!-- Timeline items will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects View -->
+        <div id="projects-view" class="view" style="display:none;">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Tüm Projeler</h2>
+                    <button class="btn-primary" onclick="openNewProjectModal()">
+                        <i class="fas fa-plus"></i>
+                        Yeni Proje Oluştur
+                    </button>
+                </div>
+                <div id="projects-list">
+                    <!-- Projects will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Workers View -->
+        <div id="workers-view" class="view" style="display:none;">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">🧙‍♂️ Yazılım Dervişleri (21)</h2>
+                    <div class="filter-group">
+                        <button class="filter-btn active" onclick="filterWorkers('all')">Tümü</button>
+                        <button class="filter-btn" onclick="filterWorkers('available')">Hazır</button>
+                        <button class="filter-btn" onclick="filterWorkers('busy')">Çalışıyor</button>
+                    </div>
+                </div>
+                <div class="workers-grid" id="workers-grid">
+                    <!-- Workers will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks View -->
+        <div id="tasks-view" class="view" style="display:none;">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">⚡ Görev Yönetimi</h2>
+                    <div class="filter-group">
+                        <button class="filter-btn active" onclick="filterTasks('all')">Tümü</button>
+                        <button class="filter-btn" onclick="filterTasks('pending')">Bekleyen</button>
+                        <button class="filter-btn" onclick="filterTasks('in_progress')">Devam Eden</button>
+                        <button class="filter-btn" onclick="filterTasks('completed')">Tamamlanan</button>
+                    </div>
+                </div>
+                <div id="tasks-list">
+                    <!-- Tasks will be inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics View -->
+        <div id="analytics-view" class="view" style="display:none;">
+            <div class="section">
+                <h2 class="section-title">Detaylı Analytics</h2>
+                <div class="tab-group">
+                    <button class="tab active" onclick="switchTab('performance')">Performans</button>
+                    <button class="tab" onclick="switchTab('workers')">Derviş Metrikleri</button>
+                    <button class="tab" onclick="switchTab('projects')">Proje İstatistikleri</button>
+                </div>
+                
+                <div id="tab-performance" class="tab-content active">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1rem;">
+                        <div>
+                            <h3 style="margin-bottom: 1rem;">Haftalık Trend</h3>
+                            <div class="chart-container" style="height: 350px;">
+                                <canvas id="weeklyTrendChart"></canvas>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 style="margin-bottom: 1rem;">Task Dağılımı</h3>
+                            <div class="chart-container" style="height: 350px;">
+                                <canvas id="taskDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-workers" class="tab-content">
+                    <div style="margin-top: 1rem;">
+                        <h3 style="margin-bottom: 1rem;">🧙‍♂️ Derviş Performans Karşılaştırması</h3>
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="workerPerformanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-projects" class="tab-content">
+                    <div style="margin-top: 1rem;">
+                        <h3 style="margin-bottom: 1rem;">Proje Başarı Oranları</h3>
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="projectSuccessChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs View -->
+        <div id="logs-view" class="view" style="display:none;">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Real-time Logs</h2>
+                    <button class="btn-primary" onclick="clearLogs()">
+                        <i class="fas fa-trash"></i>
+                        Temizle
+                    </button>
+                </div>
+                <div style="background: var(--gray-900); color: #22c55e; padding: 1.5rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem; height: 500px; overflow-y: auto;" id="logs-container">
+                    <div>[2026-03-04 15:30:45] System initialized...</div>
+                    <div>[2026-03-04 15:30:46] Loading AI workers... ✓</div>
+                    <div>[2026-03-04 15:30:47] 21 workers ready</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Worker Detail Modal -->
+    <div class="modal" id="worker-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🧙‍♂️ Derviş Detayları</h2>
+                <button class="modal-close" onclick="closeModal('worker-modal')">&times;</button>
+            </div>
+            <div id="worker-details">
+                <!-- Worker details will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- New Project Modal -->
+    <div clGlobal state
+        let uploadedFiles = [];
+        let fileAssignments = {};
+        let allDervishes = [];
+
+        // New Project Modal Functions
+        function openNewProjectModal() {
+            document.getElementById('new-project-modal').classList.add('active');
+            document.getElementById('project-step-1').style.display = 'block';
+            document.getElementById('project-step-2').style.display = 'none';
+            uploadedFiles = [];
+            fileAssignments = {};
+            document.getElementById('file-list').innerHTML = '';
+            loadDervishesForAssignment();
+        }
+
+        async function loadDervishesForAssignment() {
+            try {
+                const res = await fetch('/workers');
+                const data = await res.json();
+                allDervishes = data.workers || [];
+            } catch (error) {
+                console.error('Failed to load dervishes:', error);
+            }
+        }
+
+        // Drag & Drop
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = 'var(--brand-500)';
+            dropzone.style.background = 'rgba(99, 102, 241, 0.05)';
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.style.borderColor = 'var(--gray-300)';
+            dropzone.style.background = 'var(--gray-50)';
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.style.borderColor = 'var(--gray-300)';
+            dropzone.style.background = 'var(--gray-50)';
+            
+            const files = Array.from(e.dataTransfer.files);
+            addFiles(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            addFiles(files);
+        });
+
+        function addFiles(files) {
+            uploadedFiles = [...uploadedFiles, ...files];
+            renderFileList();
+        }
+
+        function renderFileList() {
+            const container = document.getElementById('file-list');
+            if (uploadedFiles.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = '<h4 style="margin-bottom: 0.5rem;">Yüklenen Dosyalar:</h4>';
+            uploadedFiles.forEach((file, index) => {
+                const sizeKB = (file.size / 1024).toFixed(2);
+                container.innerHTML += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: white; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid var(--gray-200);">
+                        <div>
+                            <i class="fas fa-file" style="margin-right: 0.5rem; color: var(--brand-500);"></i>
+                            <strong>${file.name}</strong>
+                            <span style="color: var(--gray-600); font-size: 0.85rem; margin-left: 0.5rem;">(${sizeKB} KB)</span>
+                        </div>
+                        <button onclick="removeFile(${index})" style="background: var(--red-500); color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            renderFileList();
+        }
+
+        function nextStep() {
+            const name = document.getElementById('new-project-name').value.trim();
+            const folder = document.getElementById('new-project-folder').value.trim();
+
+            if (!name) {
+                alert('Lütfen proje adı girin!');
+                return;
+            }🟢 Hazır' : '🟡 Çalışıyor';
+
+                    container.innerHTML += `
+                        <div class="worker-card" onclick="showWorkerDetail('${worker.id}')">
+                            <div class="worker-header">
+                                <div class="worker-avatar">${worker.icon}</div>
+                                <div class="worker-info">
+                                    <h3>🧙‍♂️ ${worker.name}</h3>
+                                    <span class="worker-status ${statusClass}">${statusText}</span>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.9rem; color: var(--gray-600); margin-bottom: 0.5rem;">
+                                ${worker.description || 'Yazılım Dervişi'}
+                            </p>
+                            <div style="margin: 0.5rem 0;">
+                                <strong>Ustalık:</strong> ${worker.priority}/10 ⭐Files.length;
+
+            // Render file assignments
+            renderFileAssignments();
+
+            // Switch to step 2
+            document.getElementById('project-step-1').style.display = 'none';
+            document.getElementById('project-step-2').style.display = 'block';
+        }
+
+        function prevStep() {
+            document.getElementById('project-step-1').style.display = 'block';
+            document.getElementById('project-step-2').style.display = 'none';
+        }
+
+        function renderFileAssignments() {
+            const container = document.getElementById('file-assignments');
+            container.innerHTML = '';
+
+            uploadedFiles.forEach((file, index) => {
+                const card = document.createElement('div');
+                card.style.cssText = 'border: 2px solid var(--gray-200); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; background: white;';
+                
+                const extension = file.name.split('.').pop().toLowerCase();
+                let recommendedType = 'backend';
+                if (['html', 'css', 'js', 'jsx', 'tsx', 'vue'].includes(extension)) recommendedType = 'frontend';
+                if (['sql', 'db'].includes(extension)) recommendedType = 'database';
+                if (['py', 'js', 'go', 'rs'].includes(extension)) recommendedType = 'backend';
+
+                // Filter dervishes by expertise
+                const recommended = allDervishes
+                    .filter(d => d.expertise.includes(recommendedType))
+                    .sort((a, b) => b.priority - a.priority)
+                    .slice(0, 5);
+
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <div>
+                            <i class="fas fa-file" style="margin-right: 0.5rem; color: var(--brand-500);"></i>
+                            <strong style="font-size: 1.1rem;">${file.name}</strong>
+                        </div>
+                        <span style="padding: 0.25rem 0.75rem; background: var(--gray-100); border-radius: 12px; font-size: 0.85rem;">
+                            ${recommendedType}
+                        </span>
+                    </div>
+                    
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">🧙‍♂️ Derviş Seç:</label>
+                    <select id="dervis-select-${index}" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 1rem;">
+                        <option value="">-- Derviş Seç --</option>
+                        ${recommended.map(d => `
+                            <option value="${d.id}" ${index === 0 ? 'selected' : ''}>
+                                ${d.icon} ${d.name} (Öncelik: ${d.priority}/10)
+                            </option>
+                        `).join('')}
+                        <optgroup label="Diğer Dervişler">
+                            ${allDervishes
+                                .filter(d => !recommended.find(r => r.id === d.id))
+                                .map(d => `<option value="${d.id}">${d.icon} ${d.name}</option>`)
+                                .join('')}
+                        </optgroup>
+                    </select>
+                `;
+
+                container.appendChild(card);
+
+                // Auto-assign first recommended
+                if (recommended.length > 0) {
+                    fileAssignments[index] = recommended[0].id;
+                }
+            });
+        }
+
+        async function createProject() {
+            // Collect assignments
+            uploadedFiles.forEach((file, index) => {
+                const select = document.getElementById(`dervis-select-${index}`);
+                if (select && select.value) {
+                    fileAssignments[index] = select.value;
+                }
+            });
+
+            // Check all files assigned
+            const unassigned = uploadedFiles.filter((_, i) => !fileAssignments[i]);
+            if (unassigned.length > 0) {
+                alert(`${unassigned.length} dosya için derviş seçilmedi!`);
+                return;
+            }
+
+            const projectData = {
+                name: document.getElementById('new-project-name').value,
+                folder: document.getElementById('new-project-folder').value,
+                description: document.getElementById('new-project-desc').value,
+                files: uploadedFiles.map((file, index) => ({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    assigned_dervis: fileAssignments[index]
+                }))
+            };
+
+            // Show loading
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Oluşturuluyor...';
+
+            try {
+                // Simulate project creation (replace with actual API call)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                alert('🎉 Proje başarıyla oluşturuldu!\nDervişler çalışmaya başladı!');
+                closeModal('new-project-modal');
+                switchView('projects');
+                loadProjects();
+
+            } catch (error) {
+                alert('Hata: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic"></i> Projeyi Başlat';
+            }
+        }
+
+        // ass="modal" id="new-project-modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>📂 Yeni Proje Oluştur</h2>
+                <button class="modal-close" onclick="closeModal('new-project-modal')">&times;</button>
+            </div>
+            
+            <!-- Step 1: Project Info -->
+            <div id="project-step-1">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Proje Adı</label>
+                    <input type="text" id="new-project-name" placeholder="Örn: E-Ticaret SaaS" 
+                           style="width:100%; padding:0.75rem; border:2px solid var(--gray-200); border-radius:8px;">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Klasör Adı</label>
+                    <input type="text" id="new-project-folder" placeholder="Örn: eticaret-saas" 
+                           style="width:100%; padding:0.75rem; border:2px solid var(--gray-200); border-radius:8px;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display:block; font-weight:600; margin-bottom:0.5rem;">Açıklama</label>
+                    <textarea id="new-project-desc" placeholder="Proje hakkında kısa açıklama..." rows="3"
+                           style="width:100%; padding:0.75rem; border:2px solid var(--gray-200); border-radius:8px;"></textarea>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display:block; font-weight:600; margin-bottom:0.5rem;">
+                        📎 Dosyaları Yükle (Sürükle-Bırak veya Tıkla)
+                    </label>
+                    <div id="dropzone" style="
+                        border: 2px dashed var(--gra✅ Görev tamamlandı: Backend API</div>
+                        <div class="timeline-meta">🧙‍♂️ Emare Asistan • 5 dakika önce</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot in-progress"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">⚡ Görev devam ediyor: Frontend UI</div>
+                        <div class="timeline-meta">🧙‍♂️ EmareCloud • 15 dakika önce</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot pending"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">🚀 n-top: 1rem;">
+                        <!-- Uploaded files will appear here -->
+                    </div>
+                </div>
+
+                <button class="btn-primary" onclick="nextStep()" style="width: 100%;">
+                    Devam Et: Dervişlere Ata
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- Step 2: Assign to Dervishes -->
+            <div id="project-step-2" style="display: none;">
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--gray-50); border-radius: 8px;">
+                    <strong>📂 Proje:</strong> <span id="confirm-project-name"></span><br>
+                    <strong>📁 Klasör:</strong> <span id="confirm-project-folder"></span><br>
+                    <strong>📄 Dosya Sayısı:</strong> <span id="confirm-file-count"></span>
+                </div>
+
+                <h3 style="margin-bottom: 1rem;">🧙‍♂️ Her Dosyayı Bir Dervişe Ata:</h3>
+                
+                <div id="file-assignments">
+                    <!-- File assignment cards will be inserted here -->
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button onclick="prevStep()" style="flex: 1; padding: 0.75rem; background: var(--gray-200); border: none; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-arrow-left"></i> Geri
+                    </button>
+                    <button class="btn-primary" onclick="createProject()" style="flex: 2;">
+                        <i class="fas fa-magic"></i> Projeyi Başlat
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            document.getElementById('theme-text').textContent = isDark ? 'Light Mode' : 'Dark Mode';
+            document.querySelector('.theme-toggle i').className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        // Load saved theme
+        if (localStorage.getItem('theme') === 'dark') {
+            toggleTheme();
+        }
+
+        // View Switching
+        function switchView(view) {
+            document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+            document.getElementById(view + '-view').style.display = 'block';
+            
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            event.target.closest('.nav-link').classList.add('active');
+
+            if (view === 'workers') loadWorkers();
+            if (view === 'projects') loadProjects();
+            if (view === 'tasks') loadTasks();
+        }
+
+        // Tab Switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
+        }
+
+        // Filter Functions
+        function filterWorkers(status) {
+            document.querySelectorAll('#workers-view .filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            loadWorkers(status);
+        }
+
+        function filterTasks(status) {
+            document.querySelectorAll('#tasks-view .filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            loadTasks(status);
+        }
+
+        // Modal Functions
+        function showWorkerDetail(workerId) {
+            document.getElementById('worker-modal').classList.add('active');
+            // Fetch worker details
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Data Loading Functions
+        async function loadDashboardStats() {
+            try {
+                const [workersRes, projectsRes] = await Promise.all([
+                    fetch('/workers'),
+                    fetch('/projects')
+                ]);
+
+                const workers = await workersRes.json();
+                const projects = await projectsRes.json();
+
+                document.getElementById('active-projects').textContent = projects.length || 0;
+                document.getElementById('active-ai').textContent = workers.available || 0;
+                document.getElementById('completed-tasks').textContent = 
+                    projects.reduce((sum, p) => sum + (p.completed_tasks || 0), 0);
+                document.getElementById('avg-time').textContent = 
+                    Math.round(projects.reduce((sum, p) => sum + (p.avg_time || 0), 0) / (projects.length || 1));
+
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        async function loadWorkers(status = 'all') {
+            try {
+                const res = await fetch('/workers');
+                const data = await res.json();
+                
+                const container = document.getElementById('workers-grid');
+                container.innerHTML = '';
+
+                let workers = data.workers || [];
+                if (status !== 'all') {
+                    workers = workers.filter(w => w.availability === (status === 'available'));
+                }
+
+                workers.forEach(worker => {
+                    const statusClass = worker.availability ? 'available' : 'busy';
+                    const statusText = worker.availability ? 'Uygun' : 'Meşgul';
+
+                    container.innerHTML += `
+                        <div class="worker-card" onclick="showWorkerDetail('${worker.id}')">
+                            <div class="worker-header">
+                                <div class="worker-avatar">${worker.icon}</div>
+                                <div class="worker-info">
+                                    <h3>${worker.name}</h3>
+                                    <span class="worker-status ${statusClass}">${statusText}</span>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.9rem; color: var(--gray-600); margin-bottom: 0.5rem;">
+                                ${worker.description || ''}
+                            </p>
+                            <div style="margin: 0.5rem 0;">
+                                <strong>Priority:</strong> ${worker.priority}/10
+                            </div>
+                            <div class="worker-expertise">
+                                ${worker.expertise.slice(0, 4).map(e => 
+                                    `<span class="expertise-tag">${e}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                console.error('Failed to load workers:', error);
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const res = await fetch('/projects');
+                const projects = await res.json();
+                
+                const container = document.getElementById('projects-list');
+                
+                if (projects.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>Henüz proje yok</p></div>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                projects.forEach(project => {
+                    const progress = project.progress?.percentage || 0;
+                    const status = project.status || 'pending';
+                    
+                    container.innerHTML += `
+                        <div class="project-card">
+                            <div class="project-header">
+                                <h3 class="project-title">${project.name}</h3>
+                                <span class="worker-status ${status}">${status.toUpperCase()}</span>
+                            </div>
+                            <div class="progress-info">
+                                <span>İlerleme</span>
+                                <span>${progress.toFixed(0)}%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${progress}%"></div>
+                            </div>
+                            <div style="margin-top: 1rem; font-size: 0.9rem; color: var(--gray-600);">
+                                <i class="fas fa-tasks"></i> ${project.total_tasks || 0} tasks • 
+                                <i class="fas fa-clock"></i> ${project.estimated_hours || 0}h
+                            </div>
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                console.error('Failed to load projects:', error);
+            }
+        }
+
+        async function loadTasks(status = 'all') {
+            const container = document.getElementById('tasks-list');
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-tasks"></i><p>Task listesi yükleniyor...</p></div>';
+        }
+
+        async function refreshActivity() {
+            const timeline = document.getElementById('activity-timeline');
+            timeline.innerHTML = `
+                <div class="timeline-item">
+                    <div class="timeline-dot completed"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Task tamamlandı: Backend API</div>
+                        <div class="timeline-meta">Emare Asistan • 5 dakika önce</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot in-progress"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Task devam ediyor: Frontend UI</div>
+                        <div class="timeline-meta">EmareCloud • 15 dakika önce</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-dot pending"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Yeni proje başlatıldı: E-Ticaret SaaS</div>
+                        <div class="timeline-meta">System • 1 saat önce</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize Charts
+        let taskChart, workerChart;
+
+        function initCharts() {
+            // Task Completion Chart
+            const taskCtx = document.getElementById('taskChart').getContext('2d');
+            taskChart = new Chart(taskCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'],
+                    datasets: [{
+                        label: 'Tamamlanan Görev',
+                        data: [12, 19, 15, 25, 22, 30, 28],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Worker Usage Chart
+            const workerCtx = document.getElementById('workerChart').getContext('2d');
+            workerChart = new Chart(workerCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['🟢 Hazır', '🟡 Çalışıyor', '🔴 Offline'],
+                    datasets: [{
+                        data: [15, 5, 1],
+                        backgroundColor: ['#22c55e', '#f59e0b', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Weekly Trend Chart
+            const weeklyCtx = document.getElementById('weeklyTrendChart').getContext('2d');
+            new Chart(weeklyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Hafta 1', 'Hafta 2', 'Hafta 3', 'Hafta 4'],
+                    datasets: [{
+                        label: 'Tamamlanan',
+                        data: [45, 62, 78, 95],
+                        backgroundColor: '#6366f1'
+                    }, {
+                        label: 'Devam Eden',
+                        data: [12, 18, 15, 20],
+                        backgroundColor: '#9333ea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Task Distribution Chart
+            const distCtx = document.getElementById('taskDistributionChart').getContext('2d');
+            new Chart(distCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Backend', 'Frontend', 'Database', 'DevOps', 'Testing', 'Docs'],
+                    datasets: [{
+                        data: [30, 25, 15, 12, 10, 8],
+                        backgroundColor: ['#6366f1', '#9333ea', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Worker Performance Chart
+            const perfCtx = document.getElementById('workerPerformanceChart').getContext('2d');
+            new Chart(perfCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Hız', 'Kalite', 'Uyumluluk', 'İletişim', 'Güvenilirlik'],
+                    datasets: [{
+                        label: '🧙‍♂️ Emare Asistan',
+                        data: [95, 90, 88, 92, 96],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)'
+                    }, {
+                        label: '🧙‍♂️ EmareCloud',
+                        data: [88, 92, 90, 85, 94],
+                        borderColor: '#9333ea',
+                        backgroundColor: 'rgba(147, 51, 234, 0.2)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Project Success Chart
+            const successCtx = document.getElementById('projectSuccessChart').getContext('2d');
+            new Chart(successCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran'],
+                    datasets: [{
+                        label: 'Başarı Oranı (%)',
+                        data: [78, 82, 85, 88, 91, 94],
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 70,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Utility Functions
+        function showNotifications() {
+            alert('🔔 3 yeni bildirim:\n\n✅ Görev tamamlandı: Backend API\n🚀 Yeni proje eklendi: CRM SaaS\n🧙‍♂️ Derviş güncellendi: Emare Asistan');
+        }
+
+        function exportData() {
+            alert('Rapor indiriliyor...');
+        }
+
+        function clearLogs() {
+            document.getElementById('logs-container').innerHTML = '<div>[' + new Date().toISOString() + '] Logs cleared</div>';
+        }
+
+        function updateChartPeriod(period) {
+            document.querySelectorAll('.stats-grid + .section .filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            // Update chart data based on period
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardStats();
+            refreshActivity();
+            initCharts();
+            
+            // Auto refresh every 30 seconds
+            setInterval(() => {
+                loadDashboardStats();
+                if (document.getElementById('dashboard-view').style.display !== 'none') {
+                    refreshActivity();
+                }
+            }, 30000);
+
+            // Simulate real-time logs
+            setInterval(() => {
+                const logs = document.getElementById('logs-container');
+                const timestamp = new Date().toLocaleString('tr-TR');
+                const messages = [
+                    '🧙‍♂️ Derviş görevi aldı',
+                    '⚡ Kod üretiliyor...',
+                    '✅ Test başarılı',
+                    '🚀 Deployment tamamlandı',
+                    '📝 Dokümantasyon güncellendi'
+                ];
+                const msg = messages[Math.floor(Math.random() * messages.length)];
+                logs.innerHTML += `<div>[${timestamp}] ${msg}</div>`;
+                logs.scrollTop = logs.scrollHeight;
+            }, 5000);
+        });
+    </script>
+</body>
+</html>

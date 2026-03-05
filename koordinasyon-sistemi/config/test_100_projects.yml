@@ -1,0 +1,75 @@
+# 100 Proje Test Konfigürasyonu - EmareUlak Entegrasyonu
+# Tarih: 4 Mart 2026
+
+test_scenario:
+  name: "100 Proje Koordinasyon Testi"
+  total_projects: 100
+  hierarchy:
+    depth: 2                    # L0 → L1(10) → L2(100 proje)
+    branch_factor: 10
+    structure: "1 koordinatör + 10 takım lideri + 100 proje"
+
+# EmareUlak Entegrasyonu
+emareulak:
+  enabled: true
+  distribution_strategy: "weighted"  # weighted, cascade, round-robin
+  auto_assign: true
+  load_balancing: true
+  real_time_sync: true
+
+# Proje Parametreleri
+projects:
+  default_priority: "medium"
+  estimated_duration_days: 30
+  daily_target_kb: 1024          # 1 MB/gün/proje (gerçekçi)
+  auto_create_subtasks: true
+  max_subtasks_per_project: 10
+  
+# Performans Ayarları  
+performance:
+  batch_register_size: 100       # Toplu kayıt boyutu
+  aggregation_interval_sec: 10   # Test için daha sık toplama
+  heartbeat_timeout_sec: 60      # Test için daha kısa
+  max_concurrent_projects: 100
+  
+# Yük Dengeleme
+load_balancing:
+  enabled: true
+  check_interval_sec: 30
+  overload_threshold_pct: 85
+  rebalance_trigger_pct: 25
+  auto_rebalance: true
+  
+# Raporlama
+reporting:
+  enabled: true
+  interval_minutes: 5            # Her 5 dakikada rapor
+  include_metrics:
+    - "project_progress"
+    - "team_load"
+    - "completion_rate"
+    - "bottlenecks"
+  export_format: "json"
+  
+# Simülasyon Ayarları
+simulation:
+  mode: "fast"                   # fast, normal, detailed
+  simulate_delays: true
+  delay_probability: 0.02        # %2 gecikme olasılığı
+  simulate_failures: true
+  failure_probability: 0.01      # %1 hata olasılığı
+  recovery_enabled: true
+
+# API Erişim
+api:
+  base_url: "http://localhost:8000"
+  timeout_sec: 30
+  retry_count: 3
+  retry_delay_sec: 2
+
+# Loglama
+logging:
+  level: "INFO"
+  file: "test_100_projects.log"
+  console_output: true
+  structured: true

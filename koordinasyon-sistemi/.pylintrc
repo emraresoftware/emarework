@@ -1,0 +1,19 @@
+[MASTER]
+ignore=.venv,__pycache__,build,dist
+
+[MESSAGES CONTROL]
+disable=
+    missing-module-docstring,
+    missing-function-docstring,
+    too-few-public-methods,
+    import-error,
+    no-member,
+    invalid-name,
+    fixme
+
+[BASIC]
+good-names=i,j,k,db,id,pk,e,ex,_
+
+[DESIGN]
+max-args=10
+max-locals=20
