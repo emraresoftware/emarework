@@ -1,0 +1,22 @@
+{
+  "slug": "emarework",
+  "name": "Emare Work",
+  "github_repo": "emraresoftware/emarework",
+  "branch": "main",
+  "dc": "local",
+  "server_host": null,
+  "server_ssh_port": 22,
+  "remote_path": "/opt/emarework",
+  "stack": "python-gunicorn",
+  "port": 8320,
+  "domain": "",
+  "deploy_commands": [
+    "cd /opt/emarework",
+    "git pull origin main",
+    "source venv/bin/activate && pip install -r requirements.txt -q",
+    "sudo systemctl restart emarework"
+  ],
+  "restart_command": "systemctl status emarework --no-pager",
+  "auto_deploy_on_push": false,
+  "health_check_url": null
+}
