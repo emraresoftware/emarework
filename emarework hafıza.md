@@ -6,14 +6,14 @@
 > **Bu dosya, projemizin tüm detaylarını kayıt altında tutar.**
 > **Nerede kaldığımızı ve yazılımın ne olduğunu asla unutmamamız için.**
 >
-> Son Güncelleme: 4 Mart 2026
-> Proje Durumu: **🧙‍♂️ YAZILIM DERVİŞLERİ SİSTEMİ HAZIR — DASHBOARD AKTIF**
+> Son Güncelleme: 7 Mart 2026
+> Proje Durumu: **🕌 DERGAH SOHBET + 43 DERVİŞ YETENEK SİSTEMİ AKTİF — 80+ API ENDPOINT**
 
 ---
 
 ## 📌 PROJE NE?
 
-**Emare Work** — 21 Yazılım Dervişi ile Çalışan Web Tabanlı Proje Koordinasyon Sistemi.
+**Emare Work** — 43 Yazılım Dervişi ile Çalışan Web Tabanlı Proje Koordinasyon Sistemi.
 
 10 kişilik bir yazılım ekibimiz var. Bu 10 kişinin her birinin kendi 10'ar kişilik grubu var. Ve bu yapı **10 seviye derinlikte** tekrarlanıyor. Toplamda **~11.1 Milyar düğüm** kapasitesi var.
 
@@ -23,7 +23,7 @@
 
 ## 🧙‍♂️ YENİ KONSEPT: YAZILIM DERVİŞLERİ
 
-**21 Özel Yapay Zeka "Dervişi"** var. Her biri farklı uzmanlık alanlarında görev alıyor:
+**43 Özel Yapay Zeka "Dervişi"** var. Her biri farklı uzmanlık alanlarında görev alıyor:
 
 - **Frontend Dervişleri:** React, Vue, HTML/CSS/JS uzmanları
 - **Backend Dervişleri:** Python, Node.js, Go, Rust uzmanları  
@@ -58,12 +58,14 @@ Kullanıcıyı karşılayan başlangıç sayfası:
 ### 2. Gelişmiş Dashboard (`advanced-dashboard.html` — 1773 satır)
 Tam özellikli kontrol merkezi:
 
-**Sidebar Navigasyon (7 bölüm):**
+**Sidebar Navigasyon (9 bölüm):**
 - 📊 Dashboard (genel durum)
 - 📁 Projeler (tüm projeler listesi)
-- 🧙‍♂️ Dervişler (21 derviş kartları)
+- 🧙‍♂️ Dervişler (43 derviş kartları + yetenek detay modalı)
 - ✅ Görevler (task management)
-- 📈 Analizler (3 tab: genel, derviş metrikleri, zaman çizelgesi)
+- 📨 Mesajlar (directive, broadcast, peer + gelen kutusu)
+- 🕌 Dergah Sohbet (7 oda, gerçek zamanlı sohbet, reaksiyon, pin)
+- 📈 Analytics (3 tab: genel, derviş metrikleri, zaman çizelgesi)
 - 📋 Loglar (gerçek zamanlı terminal)
 - 🌙 Tema Toggle (Dark/Light mode)
 
@@ -160,19 +162,22 @@ Adım adım görev atama arayüzü:
         ├── __main__.py                     ← Modül giriş noktası
         ├── cli.py                          ← CLI aracı
         ├── sim_runner.py                   ← Simülasyon CLI
-        ├── emare_workers.py                ← 🧙‍♂️ 21 Derviş tanımları (YENİ)
-        ├── project_splitter.py             ← Proje dosya bölme (YENİ)
-        ├── project_orchestrator.py         ← Görev orkestrasyon (YENİ)
-        ├── celery_app.py                   ← Celery yapılandırma (YENİ)
+        ├── emare_workers.py                ← 🧙‍♂️ 43 Derviş tanımları (projects.json'dan)
+        ├── dervish_capabilities.py         ← 🎯 43 Derviş yetenek profilleri (YENİ)
+        ├── dergah_sohbet.py                ← 🕌 Dergah sohbet servisi (YENİ)
+        ├── project_splitter.py             ← Proje dosya bölme
+        ├── project_orchestrator.py         ← Görev orkestrasyon
+        ├── celery_app.py                   ← Celery yapılandırma
         ├── emareulak_bridge.py             ← Ulak entegrasyonu
-        ├── tasks.py                        ← Celery task'ları (YENİ)
+        ├── emare_ecosystem.py              ← Ekosistem yönetimi
+        ├── tasks.py                        ← Celery task'ları
         ├── api/
         │   ├── __init__.py
-        │   ├── main.py                     ← 🚀 FastAPI REST API (~850+ satır)
-        │   └── static/                     ← 🌐 Web Dashboard (YENİ)
-        │       ├── index.html              ← Ana sayfa (290 satır)
-        │       ├── control-panel.html      ← Basit panel (597 satır)
-        │       └── advanced-dashboard.html ← Gelişmiş dashboard (1773 satır)
+        │   ├── main.py                     ← 🚀 FastAPI REST API (~1400+ satır, 80+ endpoint)
+        │   └── static/                     ← 🌐 Web Dashboard
+        │       ├── index.html              ← Ana sayfa
+        │       ├── control-panel.html      ← Basit panel
+        │       └── advanced-dashboard.html ← Gelişmiş dashboard (~2600 satır)
         ├── models/
         │   └── __init__.py                 ← SQLAlchemy + Pydantic modelleri
         ├── services/
@@ -800,4 +805,131 @@ MASTERY_EXPERT = 9-10        # Uzman
 ---
 
 > 💡 **Bu dosyayı her büyük değişiklikte güncelle.**  
+> Projeyi 6 ay sonra açtığında bile hemen nereden devam edeceğini bil!
+
+---
+
+## 🎁 ÇEYİZ HAZIRLAMA SİSTEMİ (YENİ GÖREV)
+
+**Tarih**: 06 March 2026
+**Durum**: Aktif
+
+### Ne?
+emarework Dervishi artık **Çeyiz Ustası**. Emare ekosistemine yeni proje eklendiğinde
+komple çeyiz (proje iskeleti) hazırlar.
+
+### Dosya Yapısı
+- `emarework/ceyiz_hazirla.py` — Ana çeyiz scripti
+- `emarework/ceyiz_sablonlari/` — 30 şablon dosyası (7 proje tipi)
+
+### Şablonlar
+- **fastapi** — FastAPI + SQLAlchemy backend
+- **flask** — Flask web uygulaması  
+- **react** — React + Next.js frontend
+- **cli** — Python CLI aracı
+- **fullstack** — FastAPI + React tam yığın
+- **library** — Python kütüphanesi
+- **bos** — Minimal iskelet
+
+### Kullanım
+```bash
+python3 ceyiz_hazirla.py                     # İnteraktif mod
+python3 ceyiz_hazirla.py --ad "emareX"       # Hızlı mod
+python3 ceyiz_hazirla.py --liste             # Şablon listesi
+```
+
+### Çeyiz İçeriği
+Her yeni proje için otomatik oluşturulanlar:
+1. Klasör yapısı (şablona göre 5-30 dizin)
+2. Tüm kod dosyaları (değişken substitution ile)
+3. README.md + DOSYA_YAPISI.md + hafıza dosyası
+4. .gitignore + .env.example
+5. setup.sh + start.sh
+6. Dockerfile + docker-compose.yml
+7. EMARE_ORTAK_CALISMA symlink
+8. web_dizayn klasörü
+9. Derviş kaydı + Dergah bağlantısı
+10. projects.json kaydı
+
+---
+
+## 🕌 DERGAH SOHBET ODASI (YENİ — 7 Mart 2026)
+
+**Dervişlerin birbirleriyle gerçek zamanlı iletişim kurduğu merkezi sohbet sistemi.**
+
+### Özellikler
+- 🕌 **7 Oda**: Genel, Backend, Frontend, Altyapı, Güvenlik, AI, Acil Durum
+- 💬 **Mesaj Tipleri**: chat, system, github, file_share, task_update, deploy, alert
+- 👍 **Reaksiyonlar**: Emoji reaksiyonları (👍❤️🔥👀🎉✅)
+- 📌 **Sabitleme**: Önemli mesajları sabitle
+- 🔍 **Arama**: Mesajlarda metin araması
+- 🐙 **GitHub Entegrasyonu**: push/issue/PR/webhook bildirimleri otomatik dergaha düşer
+- 📎 **Dosya Paylaşımı**: Dosya referansı paylaşım
+- 🚀 **Deploy Bildirimleri**: Otomatik deploy mesajları
+- 👥 **Online Durum**: Aktif dervişleri anlık göster
+
+### API Endpoint'leri (Dergah)
+
+| Endpoint | Metot | Açıklama |
+|----------|-------|----------|
+| `/dergah/rooms` | GET | Tüm odalar ve mesaj sayıları |
+| `/dergah/messages` | GET | Oda mesajları (pagination) |
+| `/dergah/messages` | POST | Mesaj gönder |
+| `/dergah/messages/{uid}` | GET | Tek mesaj getir |
+| `/dergah/messages/{uid}` | DELETE | Mesaj sil |
+| `/dergah/messages/{uid}/reaction` | POST | Reaksiyon ekle |
+| `/dergah/messages/{uid}/pin` | POST | Sabitle |
+| `/dergah/github-event` | POST | GitHub bildirimi |
+| `/dergah/file-share` | POST | Dosya paylaşımı |
+| `/dergah/deploy-notify` | POST | Deploy bildirimi |
+| `/dergah/online` | GET | Online dervişler |
+| `/dergah/search` | GET | Mesaj araması |
+| `/dergah/stats` | GET | İstatistikler |
+| `/dergah/heartbeat/{id}` | POST | Heartbeat |
+
+### Teknik Dosyalar
+- `src/dergah_sohbet.py` — DergahSohbet servisi (in-memory)
+- Dashboard: `dergah-view` — 3 sütun: Odalar | Sohbet | Online
+
+---
+
+## 🎯 DERVİŞ YETENEKLERİ SİSTEMİ (YENİ — 7 Mart 2026)
+
+**43 dervişin her biri için detaylı yetenek profili.**
+
+### Her Derviş İçin Tanımlanan Bilgiler
+- **role**: Dervişin rolü (örn: "AI Müşteri Hizmetleri Dervişi")
+- **specialty**: Uzmanlık alanı detayı
+- **internal_apis**: İç API'ler → `[{endpoint, method, desc}]`
+- **external_apis**: Dış API'ler → `[{name, usage}]`
+- **services**: Sunduğu servisler listesi
+- **integrations**: Entegre olduğu projeler
+- **ports**: Port haritası `{http: 8000, ws: 8001}`
+- **strengths**: Güçlü yönleri listesi
+
+### API Endpoint'leri (Yetenekler)
+
+| Endpoint | Metot | Açıklama |
+|----------|-------|----------|
+| `/dervish/capabilities` | GET | Tüm 43 dervişin yetenekleri |
+| `/dervish/capabilities/summary` | GET | Özet (toplam servis, API sayıları) |
+| `/dervish/{id}/capabilities` | GET | Tek derviş yetenekleri |
+
+### Dashboard Entegrasyonu
+Worker detay modalında (🧙‍♂️ Derviş Detayları) artık şunlar görünür:
+- Rol & Uzmanlık
+- Güçlü Yönler (yeşil badge'ler)
+- İç API'ler tablosu (endpoint, method, açıklama)
+- Dış API'ler (mor badge'ler + tooltip açıklama)
+- Servisler (mavi badge'ler)
+- Entegrasyonlar (sarı badge'ler)
+- Port haritası
+
+### Teknik Dosyalar
+- `src/dervish_capabilities.py` — 43 dervişin tüm yetenekleri (814 satır)
+- Dashboard: `renderWorkerDetail()` fonksiyonu
+
+---
+
+> Bu dosyayı her büyük değişiklikte güncelle.
 > Projeyi 6 ay sonra açtığında bile hemen nereden devam edeceğini bil!

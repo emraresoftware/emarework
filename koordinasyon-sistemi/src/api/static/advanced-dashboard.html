@@ -780,6 +780,20 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" onclick="switchView('messages')">
+                    <i class="fas fa-envelope"></i>
+                    <span>Mesajlar</span>
+                    <span id="unread-badge" style="background:#ef4444;color:white;border-radius:10px;padding:0 6px;font-size:0.75rem;margin-left:auto;display:none;">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="switchView('dergah')">
+                    <i class="fas fa-mosque"></i>
+                    <span>Dergah Sohbet</span>
+                    <span id="dergah-unread" style="background:#8b5cf6;color:white;border-radius:10px;padding:0 6px;font-size:0.75rem;margin-left:auto;display:none;">0</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" onclick="switchView('analytics')">
                     <i class="fas fa-chart-bar"></i>
                     <span>Analytics</span>
@@ -861,7 +875,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <div>
-                            <div class="stat-label">Tamamlanan Task</div>
+                            <div class="stat-label">Production</div>
                             <div class="stat-value" id="completed-tasks">0</div>
                         </div>
                         <div class="stat-icon purple">
@@ -877,8 +891,8 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <div>
-                            <div class="stat-label">Ortalama Süre</div>
-                            <div class="stat-value" id="avg-time">0<span style="font-size:1rem">h</span></div>
+                            <div class="stat-label">Ort. Tamamlanma</div>
+                            <div class="stat-value" id="avg-time">0<span style="font-size:1rem"></span></div>
                         </div>
                         <div class="stat-icon orange">
                             <i class="fas fa-clock"></i>
@@ -934,15 +948,23 @@
 
         <!-- Projects View -->
         <div id="projects-view" class="view" style="display:none;">
+            <!-- Özet Kartları -->
+            <div id="project-summary-cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+            
             <div class="section">
                 <div class="section-header">
-                    <h2 class="section-title">Tüm Projeler</h2>
-                    <button class="btn-primary" onclick="openNewProjectModal()">
-                        <i class="fas fa-plus"></i>
-                        Yeni Proje Oluştur
-                    </button>
+                    <h2 class="section-title">Emare Ekosistemi — 43 Proje</h2>
+                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <button class="filter-btn active" onclick="filterProjects('all')">Tümü</button>
+                        <button class="filter-btn" onclick="filterProjects('production')" style="border-color:#22c55e;">🟢 Production</button>
+                        <button class="filter-btn" onclick="filterProjects('beta')" style="border-color:#06b6d4;">🔵 Beta</button>
+                        <button class="filter-btn" onclick="filterProjects('mvp')" style="border-color:#f59e0b;">🟡 MVP</button>
+                        <button class="filter-btn" onclick="filterProjects('scaffold')" style="border-color:#a855f7;">🟣 Scaffold</button>
+                        <button class="filter-btn" onclick="filterProjects('idea')" style="border-color:#9ca3af;">⚪ Idea</button>
+                        <input id="project-search" type="text" placeholder="Proje ara..." oninput="filterProjects(currentPhaseFilter)" style="padding:0.4rem 0.8rem;border:2px solid var(--gray-200);border-radius:8px;width:150px;">
+                    </div>
                 </div>
-                <div id="projects-list">
+                <div id="projects-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:1rem;">
                     <!-- Projects will be inserted here -->
                 </div>
             </div>
@@ -1047,13 +1069,130 @@
                 </div>
             </div>
         </div>
+
+        <!-- Messages View -->
+        <div id="messages-view" class="view" style="display:none;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div class="section">
+                    <h2 class="section-title">📨 Mesaj Gönder</h2>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Mesaj Tipi</label>
+                        <select id="msg-type" style="width:100%;padding:0.6rem;border:2px solid var(--gray-200);border-radius:8px;font-size:0.9rem;">
+                            <option value="directive">Emir (Yukarıdan Aşağı)</option>
+                            <option value="broadcast">Yayın (Tüm Alt Ağaca)</option>
+                            <option value="report">Rapor (Aşağıdan Yukarı)</option>
+                            <option value="peer">Eşler Arası (Doğrudan)</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Gönderen Adres</label>
+                        <input id="msg-sender" type="text" value="L0" placeholder="Örn: L0, L1.3" style="width:100%;padding:0.6rem;border:2px solid var(--gray-200);border-radius:8px;">
+                    </div>
+                    <div id="msg-recipient-group" style="margin-bottom: 1rem; display:none;">
+                        <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Alıcı Adres</label>
+                        <input id="msg-recipient" type="text" placeholder="Örn: L1.5" style="width:100%;padding:0.6rem;border:2px solid var(--gray-200);border-radius:8px;">
+                    </div>
+                    <div id="msg-depth-group" style="margin-bottom: 1rem;">
+                        <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Yayılma Derinliği</label>
+                        <input id="msg-depth" type="number" value="1" min="1" max="10" style="width:100%;padding:0.6rem;border:2px solid var(--gray-200);border-radius:8px;">
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Konu</label>
+                        <input id="msg-subject" type="text" placeholder="Mesaj konusu" style="width:100%;padding:0.6rem;border:2px solid var(--gray-200);border-radius:8px;">
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="font-weight:600;display:block;margin-bottom:0.5rem;">Mesaj</label>
+                        <textarea id="msg-body" rows="3" placeholder="Mesaj içeriği..." style="width:100%;padding:0.6rem;border:2px solid var(--gray-200);border-radius:8px;font-family:inherit;"></textarea>
+                    </div>
+                    <button class="btn-primary" onclick="sendMessage()" style="width:100%;">
+                        <i class="fas fa-paper-plane"></i> Gönder
+                    </button>
+                    <div id="msg-result" style="margin-top:1rem;"></div>
+                </div>
+                <div class="section">
+                    <h2 class="section-title">📊 Mesaj İstatistikleri</h2>
+                    <div id="msg-stats-container">
+                        <div style="text-align:center;padding:2rem;color:var(--gray-600);">
+                            <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">📥 Gelen Kutusu</h2>
+                    <div style="display:flex;gap:0.5rem;align-items:center;">
+                        <input id="inbox-address" type="text" value="L0" placeholder="Düğüm adresi" style="padding:0.5rem;border:2px solid var(--gray-200);border-radius:8px;width:120px;">
+                        <button class="filter-btn active" onclick="loadInbox()">
+                            <i class="fas fa-search"></i> Yükle
+                        </button>
+                        <button class="filter-btn" onclick="loadInbox(true)">
+                            Sadece Okunmamış
+                        </button>
+                        <button class="filter-btn" onclick="markAllRead()">
+                            <i class="fas fa-check-double"></i> Tümünü Oku
+                        </button>
+                    </div>
+                </div>
+                <div id="inbox-container">
+                    <div style="text-align:center;padding:3rem;color:var(--gray-600);">
+                        <i class="fas fa-inbox" style="font-size:3rem;margin-bottom:1rem;display:block;"></i>
+                        Bir düğüm adresi girin ve "Yükle" butonuna tıklayın
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ DERGAH SOHBET ODASI ═══ -->
+        <div id="dergah-view" class="view" style="display:none;">
+            <div style="display:grid;grid-template-columns:220px 1fr 240px;gap:1rem;height:calc(100vh - 140px);">
+                <!-- Sol: Odalar -->
+                <div class="section" style="overflow-y:auto;padding:1rem;">
+                    <h3 style="margin-bottom:1rem;font-size:1rem;">🕌 Odalar</h3>
+                    <div id="dergah-rooms" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+                    <hr style="margin:1rem 0;border-color:var(--gray-200);">
+                    <h3 style="margin-bottom:0.5rem;font-size:0.9rem;">📌 Sabitlenmiş</h3>
+                    <div id="dergah-pinned" style="font-size:0.8rem;color:var(--gray-600);">—</div>
+                </div>
+
+                <!-- Orta: Sohbet -->
+                <div class="section" style="display:flex;flex-direction:column;padding:0;overflow:hidden;">
+                    <div style="padding:1rem;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;">
+                        <h2 style="margin:0;font-size:1.1rem;"><span id="dergah-room-icon">🕌</span> <span id="dergah-room-title">Genel</span></h2>
+                        <div style="display:flex;gap:0.5rem;">
+                            <input id="dergah-search" type="text" placeholder="Mesaj ara..." style="padding:0.4rem 0.8rem;border:1px solid var(--gray-200);border-radius:8px;font-size:0.85rem;width:180px;">
+                            <button class="filter-btn" onclick="searchDergah()" title="Ara"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                    <div id="dergah-messages" style="flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;"></div>
+                    <div style="padding:1rem;border-top:1px solid var(--gray-200);display:flex;gap:0.5rem;">
+                        <select id="dergah-sender" style="padding:0.5rem;border:1px solid var(--gray-200);border-radius:8px;font-size:0.85rem;width:160px;">
+                            <option value="emarework">🏗️ emarework</option>
+                        </select>
+                        <input id="dergah-input" type="text" placeholder="Mesaj yaz..." style="flex:1;padding:0.5rem 1rem;border:1px solid var(--gray-200);border-radius:8px;font-size:0.9rem;" onkeydown="if(event.key==='Enter')sendDergahMessage()">
+                        <button class="btn-primary" onclick="sendDergahMessage()" style="padding:0.5rem 1.2rem;">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sağ: Online Dervişler -->
+                <div class="section" style="overflow-y:auto;padding:1rem;">
+                    <h3 style="margin-bottom:0.5rem;font-size:1rem;">👥 Online <span id="dergah-online-count" style="font-size:0.85rem;color:var(--gray-600);">(0)</span></h3>
+                    <div id="dergah-online-list" style="display:flex;flex-direction:column;gap:0.4rem;"></div>
+                    <hr style="margin:1rem 0;border-color:var(--gray-200);">
+                    <h3 style="margin-bottom:0.5rem;font-size:0.9rem;">📊 İstatistikler</h3>
+                    <div id="dergah-stats-mini" style="font-size:0.85rem;color:var(--gray-600);"></div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Worker Detail Modal -->
     <div class="modal" id="worker-modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width:900px;max-height:85vh;overflow-y:auto;">
             <div class="modal-header">
-                <h2>🧙‍♂️ Derviş Detayları</h2>
+                <h2>🧙‍♂️ Derviş Detayları & Yetenekler</h2>
                 <button class="modal-close" onclick="closeModal('worker-modal')">&times;</button>
             </div>
             <div id="worker-details">
@@ -1063,241 +1202,7 @@
     </div>
 
     <!-- New Project Modal -->
-    <div clGlobal state
-        let uploadedFiles = [];
-        let fileAssignments = {};
-        let allDervishes = [];
-
-        // New Project Modal Functions
-        function openNewProjectModal() {
-            document.getElementById('new-project-modal').classList.add('active');
-            document.getElementById('project-step-1').style.display = 'block';
-            document.getElementById('project-step-2').style.display = 'none';
-            uploadedFiles = [];
-            fileAssignments = {};
-            document.getElementById('file-list').innerHTML = '';
-            loadDervishesForAssignment();
-        }
-
-        async function loadDervishesForAssignment() {
-            try {
-                const res = await fetch('/workers');
-                const data = await res.json();
-                allDervishes = data.workers || [];
-            } catch (error) {
-                console.error('Failed to load dervishes:', error);
-            }
-        }
-
-        // Drag & Drop
-        const dropzone = document.getElementById('dropzone');
-        const fileInput = document.getElementById('file-input');
-
-        dropzone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropzone.style.borderColor = 'var(--brand-500)';
-            dropzone.style.background = 'rgba(99, 102, 241, 0.05)';
-        });
-
-        dropzone.addEventListener('dragleave', () => {
-            dropzone.style.borderColor = 'var(--gray-300)';
-            dropzone.style.background = 'var(--gray-50)';
-        });
-
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.style.borderColor = 'var(--gray-300)';
-            dropzone.style.background = 'var(--gray-50)';
-            
-            const files = Array.from(e.dataTransfer.files);
-            addFiles(files);
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            const files = Array.from(e.target.files);
-            addFiles(files);
-        });
-
-        function addFiles(files) {
-            uploadedFiles = [...uploadedFiles, ...files];
-            renderFileList();
-        }
-
-        function renderFileList() {
-            const container = document.getElementById('file-list');
-            if (uploadedFiles.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
-
-            container.innerHTML = '<h4 style="margin-bottom: 0.5rem;">Yüklenen Dosyalar:</h4>';
-            uploadedFiles.forEach((file, index) => {
-                const sizeKB = (file.size / 1024).toFixed(2);
-                container.innerHTML += `
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: white; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid var(--gray-200);">
-                        <div>
-                            <i class="fas fa-file" style="margin-right: 0.5rem; color: var(--brand-500);"></i>
-                            <strong>${file.name}</strong>
-                            <span style="color: var(--gray-600); font-size: 0.85rem; margin-left: 0.5rem;">(${sizeKB} KB)</span>
-                        </div>
-                        <button onclick="removeFile(${index})" style="background: var(--red-500); color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 6px; cursor: pointer;">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-            });
-        }
-
-        function removeFile(index) {
-            uploadedFiles.splice(index, 1);
-            renderFileList();
-        }
-
-        function nextStep() {
-            const name = document.getElementById('new-project-name').value.trim();
-            const folder = document.getElementById('new-project-folder').value.trim();
-
-            if (!name) {
-                alert('Lütfen proje adı girin!');
-                return;
-            }🟢 Hazır' : '🟡 Çalışıyor';
-
-                    container.innerHTML += `
-                        <div class="worker-card" onclick="showWorkerDetail('${worker.id}')">
-                            <div class="worker-header">
-                                <div class="worker-avatar">${worker.icon}</div>
-                                <div class="worker-info">
-                                    <h3>🧙‍♂️ ${worker.name}</h3>
-                                    <span class="worker-status ${statusClass}">${statusText}</span>
-                                </div>
-                            </div>
-                            <p style="font-size: 0.9rem; color: var(--gray-600); margin-bottom: 0.5rem;">
-                                ${worker.description || 'Yazılım Dervişi'}
-                            </p>
-                            <div style="margin: 0.5rem 0;">
-                                <strong>Ustalık:</strong> ${worker.priority}/10 ⭐Files.length;
-
-            // Render file assignments
-            renderFileAssignments();
-
-            // Switch to step 2
-            document.getElementById('project-step-1').style.display = 'none';
-            document.getElementById('project-step-2').style.display = 'block';
-        }
-
-        function prevStep() {
-            document.getElementById('project-step-1').style.display = 'block';
-            document.getElementById('project-step-2').style.display = 'none';
-        }
-
-        function renderFileAssignments() {
-            const container = document.getElementById('file-assignments');
-            container.innerHTML = '';
-
-            uploadedFiles.forEach((file, index) => {
-                const card = document.createElement('div');
-                card.style.cssText = 'border: 2px solid var(--gray-200); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; background: white;';
-                
-                const extension = file.name.split('.').pop().toLowerCase();
-                let recommendedType = 'backend';
-                if (['html', 'css', 'js', 'jsx', 'tsx', 'vue'].includes(extension)) recommendedType = 'frontend';
-                if (['sql', 'db'].includes(extension)) recommendedType = 'database';
-                if (['py', 'js', 'go', 'rs'].includes(extension)) recommendedType = 'backend';
-
-                // Filter dervishes by expertise
-                const recommended = allDervishes
-                    .filter(d => d.expertise.includes(recommendedType))
-                    .sort((a, b) => b.priority - a.priority)
-                    .slice(0, 5);
-
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <div>
-                            <i class="fas fa-file" style="margin-right: 0.5rem; color: var(--brand-500);"></i>
-                            <strong style="font-size: 1.1rem;">${file.name}</strong>
-                        </div>
-                        <span style="padding: 0.25rem 0.75rem; background: var(--gray-100); border-radius: 12px; font-size: 0.85rem;">
-                            ${recommendedType}
-                        </span>
-                    </div>
-                    
-                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">🧙‍♂️ Derviş Seç:</label>
-                    <select id="dervis-select-${index}" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 1rem;">
-                        <option value="">-- Derviş Seç --</option>
-                        ${recommended.map(d => `
-                            <option value="${d.id}" ${index === 0 ? 'selected' : ''}>
-                                ${d.icon} ${d.name} (Öncelik: ${d.priority}/10)
-                            </option>
-                        `).join('')}
-                        <optgroup label="Diğer Dervişler">
-                            ${allDervishes
-                                .filter(d => !recommended.find(r => r.id === d.id))
-                                .map(d => `<option value="${d.id}">${d.icon} ${d.name}</option>`)
-                                .join('')}
-                        </optgroup>
-                    </select>
-                `;
-
-                container.appendChild(card);
-
-                // Auto-assign first recommended
-                if (recommended.length > 0) {
-                    fileAssignments[index] = recommended[0].id;
-                }
-            });
-        }
-
-        async function createProject() {
-            // Collect assignments
-            uploadedFiles.forEach((file, index) => {
-                const select = document.getElementById(`dervis-select-${index}`);
-                if (select && select.value) {
-                    fileAssignments[index] = select.value;
-                }
-            });
-
-            // Check all files assigned
-            const unassigned = uploadedFiles.filter((_, i) => !fileAssignments[i]);
-            if (unassigned.length > 0) {
-                alert(`${unassigned.length} dosya için derviş seçilmedi!`);
-                return;
-            }
-
-            const projectData = {
-                name: document.getElementById('new-project-name').value,
-                folder: document.getElementById('new-project-folder').value,
-                description: document.getElementById('new-project-desc').value,
-                files: uploadedFiles.map((file, index) => ({
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                    assigned_dervis: fileAssignments[index]
-                }))
-            };
-
-            // Show loading
-            const btn = event.target;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Oluşturuluyor...';
-
-            try {
-                // Simulate project creation (replace with actual API call)
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                alert('🎉 Proje başarıyla oluşturuldu!\nDervişler çalışmaya başladı!');
-                closeModal('new-project-modal');
-                switchView('projects');
-                loadProjects();
-
-            } catch (error) {
-                alert('Hata: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-magic"></i> Projeyi Başlat';
-            }
-        }
-
-        // ass="modal" id="new-project-modal">
+    <div class="modal" id="new-project-modal">
         <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
                 <h2>📂 Yeni Proje Oluştur</h2>
@@ -1329,23 +1234,22 @@
                         📎 Dosyaları Yükle (Sürükle-Bırak veya Tıkla)
                     </label>
                     <div id="dropzone" style="
-                        border: 2px dashed var(--gra✅ Görev tamamlandı: Backend API</div>
-                        <div class="timeline-meta">🧙‍♂️ Emare Asistan • 5 dakika önce</div>
+                        border: 2px dashed var(--gray-300);
+                        border-radius: 12px;
+                        padding: 2rem;
+                        text-align: center;
+                        cursor: pointer;
+                        background: var(--gray-50);
+                        transition: all 0.3s ease;
+                    " onclick="document.getElementById('file-input').click()">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: var(--brand-500); margin-bottom: 0.5rem;"></i>
+                        <p style="color: var(--gray-600);">Dosyaları buraya sürükleyin veya tıklayın</p>
                     </div>
+                    <input type="file" id="file-input" multiple style="display: none;">
                 </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot in-progress"></div>
-                    <div class="timeline-content">
-                        <div class="timeline-title">⚡ Görev devam ediyor: Frontend UI</div>
-                        <div class="timeline-meta">🧙‍♂️ EmareCloud • 15 dakika önce</div>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-dot pending"></div>
-                    <div class="timeline-content">
-                        <div class="timeline-title">🚀 n-top: 1rem;">
-                        <!-- Uploaded files will appear here -->
-                    </div>
+
+                <div id="file-list" style="margin-top: 1rem;">
+                    <!-- Uploaded files will appear here -->
                 </div>
 
                 <button class="btn-primary" onclick="nextStep()" style="width: 100%;">
@@ -1401,11 +1305,14 @@
             document.getElementById(view + '-view').style.display = 'block';
             
             document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            event.target.closest('.nav-link').classList.add('active');
+            if (event && event.target) event.target.closest('.nav-link').classList.add('active');
 
             if (view === 'workers') loadWorkers();
             if (view === 'projects') loadProjects();
             if (view === 'tasks') loadTasks();
+            if (view === 'messages') { loadMessageStats(); loadInbox(); }
+            if (view === 'analytics') loadAnalytics();
+            if (view === 'dergah') { loadDergahRooms(); loadDergahMessages(); loadDergahOnline(); }
         }
 
         // Tab Switching
@@ -1431,32 +1338,366 @@
         }
 
         // Modal Functions
-        function showWorkerDetail(workerId) {
+        async function showWorkerDetail(workerId) {
             document.getElementById('worker-modal').classList.add('active');
-            // Fetch worker details
+            const det = document.getElementById('worker-details');
+            det.innerHTML = '<div style="text-align:center;padding:2rem;"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>';
+            try {
+                const [wRes, cRes] = await Promise.all([
+                    fetch(`/workers/${workerId}?memory=true`),
+                    fetch(`/dervish/${workerId}/capabilities`)
+                ]);
+                const worker = await wRes.json();
+                let caps = null;
+                if (cRes.ok) caps = await cRes.json();
+                det.innerHTML = renderWorkerDetail(worker, caps);
+            } catch(e) {
+                det.innerHTML = '<div style="color:red;padding:2rem;">Yüklenemedi: ' + e.message + '</div>';
+            }
+        }
+
+        function renderWorkerDetail(w, caps) {
+            const statusColors = { running: '#22c55e', ready: '#3b82f6', development: '#f59e0b', planning: '#8b5cf6' };
+            let html = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+                <div>
+                    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+                        <span style="font-size:2.5rem;">${w.icon || '🧙‍♂️'}</span>
+                        <div>
+                            <h3 style="margin:0;">${w.name}</h3>
+                            <span style="background:${statusColors[w.status]||'#6b7280'};color:white;padding:2px 10px;border-radius:12px;font-size:0.8rem;">${w.status}</span>
+                            <span style="margin-left:6px;color:var(--gray-600);font-size:0.85rem;">${w.category || ''}</span>
+                        </div>
+                    </div>
+                    <p style="color:var(--gray-600);font-size:0.9rem;margin-bottom:1rem;">${w.description || ''}</p>
+                    <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem;">
+                        ${(w.tech||[]).map(t => `<span style="background:var(--gray-100);padding:2px 8px;border-radius:6px;font-size:0.8rem;">${t}</span>`).join('')}
+                    </div>
+                    <div style="font-size:0.85rem;color:var(--gray-600);">
+                        <div>🏷️ <strong>Uzmanlık:</strong> ${(w.expertise||[]).join(', ')}</div>
+                        <div>⚡ <strong>Öncelik:</strong> ${w.priority || '?'}</div>
+                        <div>🌐 <strong>Port:</strong> ${w.local_port || 'Yok'}</div>
+                        <div>📂 <strong>Yol:</strong> <code style="font-size:0.8rem;">${w.path || '—'}</code></div>
+                    </div>
+                </div>
+                <div>`;
+            if (caps) {
+                html += `
+                    <div style="margin-bottom:1rem;">
+                        <h4 style="margin-bottom:0.5rem;">🎯 Rol & Uzmanlık</h4>
+                        <div style="font-size:0.85rem;"><strong>${caps.role || ''}</strong></div>
+                        <div style="font-size:0.85rem;color:var(--gray-600);">${caps.specialty || ''}</div>
+                    </div>
+                    <div style="margin-bottom:1rem;">
+                        <h4 style="margin-bottom:0.5rem;">💪 Güçlü Yönler</h4>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
+                            ${(caps.strengths||[]).map(s => `<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:6px;font-size:0.8rem;">✅ ${s}</span>`).join('')}
+                        </div>
+                    </div>`;
+            } else {
+                html += '<div style="color:var(--gray-500);font-size:0.85rem;">Yetenek bilgisi bulunamadı</div>';
+            }
+            html += '</div></div>';
+
+            if (caps) {
+                // İç API'ler
+                if (caps.internal_apis && caps.internal_apis.length) {
+                    html += `<div style="margin-top:1.5rem;">
+                        <h4 style="margin-bottom:0.5rem;">🔌 İç API'ler (${caps.internal_apis.length})</h4>
+                        <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+                            <thead><tr style="background:var(--gray-100);">
+                                <th style="padding:6px 8px;text-align:left;">Endpoint</th>
+                                <th style="padding:6px 8px;text-align:left;width:70px;">Method</th>
+                                <th style="padding:6px 8px;text-align:left;">Açıklama</th>
+                            </tr></thead>
+                            <tbody>${caps.internal_apis.map(a => `<tr style="border-bottom:1px solid var(--gray-100);">
+                                <td style="padding:5px 8px;"><code>${a.endpoint}</code></td>
+                                <td style="padding:5px 8px;"><span style="background:${a.method==='GET'?'#dbeafe':a.method==='POST'?'#dcfce7':a.method==='PUT'?'#fef3c7':'#fce7f3'};padding:1px 6px;border-radius:4px;font-size:0.75rem;font-weight:600;">${a.method}</span></td>
+                                <td style="padding:5px 8px;color:var(--gray-600);">${a.desc}</td>
+                            </tr>`).join('')}</tbody>
+                        </table>
+                    </div>`;
+                }
+
+                // Dış API'ler
+                if (caps.external_apis && caps.external_apis.length) {
+                    html += `<div style="margin-top:1rem;">
+                        <h4 style="margin-bottom:0.5rem;">🌐 Dış API'ler (${caps.external_apis.length})</h4>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                            ${caps.external_apis.map(a => `<span title="${a.usage}" style="background:#ede9fe;color:#7c3aed;padding:3px 10px;border-radius:6px;font-size:0.8rem;cursor:help;">🔗 ${a.name}</span>`).join('')}
+                        </div>
+                    </div>`;
+                }
+
+                // Servisler
+                if (caps.services && caps.services.length) {
+                    html += `<div style="margin-top:1rem;">
+                        <h4 style="margin-bottom:0.5rem;">⚙️ Servisler</h4>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                            ${caps.services.map(s => `<span style="background:#e0f2fe;color:#0284c7;padding:3px 10px;border-radius:6px;font-size:0.8rem;">🔧 ${s}</span>`).join('')}
+                        </div>
+                    </div>`;
+                }
+
+                // Entegrasyonlar
+                if (caps.integrations && caps.integrations.length) {
+                    html += `<div style="margin-top:1rem;">
+                        <h4 style="margin-bottom:0.5rem;">🔗 Entegrasyonlar</h4>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                            ${caps.integrations.map(i => `<span style="background:#fef3c7;color:#d97706;padding:3px 10px;border-radius:6px;font-size:0.8rem;">🔄 ${i}</span>`).join('')}
+                        </div>
+                    </div>`;
+                }
+
+                // Portlar
+                if (caps.ports && Object.keys(caps.ports).length) {
+                    html += `<div style="margin-top:1rem;">
+                        <h4 style="margin-bottom:0.5rem;">🚪 Portlar</h4>
+                        <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+                            ${Object.entries(caps.ports).map(([k,v]) => `<span style="background:var(--gray-100);padding:3px 10px;border-radius:6px;font-size:0.8rem;">:${v} (${k})</span>`).join('')}
+                        </div>
+                    </div>`;
+                }
+            }
+            return html;
         }
 
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('active');
         }
 
+        // ─── New Project Modal Functions ─────────────────────────────────
+        let uploadedFiles = [];
+        let fileAssignments = {};
+        let allDervishes = [];
+
+        function openNewProjectModal() {
+            document.getElementById('new-project-modal').classList.add('active');
+            document.getElementById('project-step-1').style.display = 'block';
+            document.getElementById('project-step-2').style.display = 'none';
+            uploadedFiles = [];
+            fileAssignments = {};
+            document.getElementById('file-list').innerHTML = '';
+            loadDervishesForAssignment();
+        }
+
+        async function loadDervishesForAssignment() {
+            try {
+                const res = await fetch('/workers');
+                const data = await res.json();
+                allDervishes = data.workers || [];
+            } catch (error) {
+                console.error('Failed to load dervishes:', error);
+            }
+        }
+
+        function initDropzone() {
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('file-input');
+            if (!dropzone || !fileInput) return;
+
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = 'var(--brand-500)';
+                dropzone.style.background = 'rgba(99, 102, 241, 0.05)';
+            });
+
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.style.borderColor = 'var(--gray-300)';
+                dropzone.style.background = 'var(--gray-50)';
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.style.borderColor = 'var(--gray-300)';
+                dropzone.style.background = 'var(--gray-50)';
+                const files = Array.from(e.dataTransfer.files);
+                addFiles(files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                addFiles(files);
+            });
+        }
+
+        function addFiles(files) {
+            uploadedFiles = [...uploadedFiles, ...files];
+            renderFileList();
+        }
+
+        function renderFileList() {
+            const container = document.getElementById('file-list');
+            if (uploadedFiles.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = '<h4 style="margin-bottom: 0.5rem;">Yüklenen Dosyalar:</h4>';
+            uploadedFiles.forEach((file, index) => {
+                const sizeKB = (file.size / 1024).toFixed(2);
+                container.innerHTML += `
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: white; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid var(--gray-200);">
+                        <div>
+                            <i class="fas fa-file" style="margin-right: 0.5rem; color: var(--brand-500);"></i>
+                            <strong>${file.name}</strong>
+                            <span style="color: var(--gray-600); font-size: 0.85rem; margin-left: 0.5rem;">(${sizeKB} KB)</span>
+                        </div>
+                        <button onclick="removeFile(${index})" style="background: var(--red-500); color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 6px; cursor: pointer;">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            renderFileList();
+        }
+
+        function nextStep() {
+            const name = document.getElementById('new-project-name').value.trim();
+            const folder = document.getElementById('new-project-folder').value.trim();
+
+            if (!name) {
+                alert('Lütfen proje adı girin!');
+                return;
+            }
+
+            document.getElementById('confirm-project-name').textContent = name;
+            document.getElementById('confirm-project-folder').textContent = folder || name.toLowerCase().replace(/\s+/g, '-');
+            document.getElementById('confirm-file-count').textContent = uploadedFiles.length;
+
+            renderFileAssignments();
+
+            document.getElementById('project-step-1').style.display = 'none';
+            document.getElementById('project-step-2').style.display = 'block';
+        }
+
+        function prevStep() {
+            document.getElementById('project-step-1').style.display = 'block';
+            document.getElementById('project-step-2').style.display = 'none';
+        }
+
+        function renderFileAssignments() {
+            const container = document.getElementById('file-assignments');
+            container.innerHTML = '';
+
+            uploadedFiles.forEach((file, index) => {
+                const card = document.createElement('div');
+                card.style.cssText = 'border: 2px solid var(--gray-200); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; background: white;';
+                
+                const extension = file.name.split('.').pop().toLowerCase();
+                let recommendedType = 'backend';
+                if (['html', 'css', 'js', 'jsx', 'tsx', 'vue'].includes(extension)) recommendedType = 'frontend';
+                if (['sql', 'db'].includes(extension)) recommendedType = 'database';
+                if (['py', 'js', 'go', 'rs'].includes(extension)) recommendedType = 'backend';
+
+                const recommended = allDervishes
+                    .filter(d => d.expertise && d.expertise.includes(recommendedType))
+                    .sort((a, b) => b.priority - a.priority)
+                    .slice(0, 5);
+
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <div>
+                            <i class="fas fa-file" style="margin-right: 0.5rem; color: var(--brand-500);"></i>
+                            <strong style="font-size: 1.1rem;">${file.name}</strong>
+                        </div>
+                        <span style="padding: 0.25rem 0.75rem; background: var(--gray-100); border-radius: 12px; font-size: 0.85rem;">
+                            ${recommendedType}
+                        </span>
+                    </div>
+                    
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">🧙‍♂️ Derviş Seç:</label>
+                    <select id="dervis-select-${index}" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gray-200); border-radius: 8px; font-size: 1rem;">
+                        <option value="">-- Derviş Seç --</option>
+                        ${recommended.map(d => `
+                            <option value="${d.id}" ${index === 0 ? 'selected' : ''}>
+                                ${d.icon} ${d.name} (Öncelik: ${d.priority}/10)
+                            </option>
+                        `).join('')}
+                        <optgroup label="Diğer Dervişler">
+                            ${allDervishes
+                                .filter(d => !recommended.find(r => r.id === d.id))
+                                .map(d => `<option value="${d.id}">${d.icon} ${d.name}</option>`)
+                                .join('')}
+                        </optgroup>
+                    </select>
+                `;
+
+                container.appendChild(card);
+
+                if (recommended.length > 0) {
+                    fileAssignments[index] = recommended[0].id;
+                }
+            });
+        }
+
+        async function createProject() {
+            uploadedFiles.forEach((file, index) => {
+                const select = document.getElementById(`dervis-select-${index}`);
+                if (select && select.value) {
+                    fileAssignments[index] = select.value;
+                }
+            });
+
+            const unassigned = uploadedFiles.filter((_, i) => !fileAssignments[i]);
+            if (unassigned.length > 0) {
+                alert(`${unassigned.length} dosya için derviş seçilmedi!`);
+                return;
+            }
+
+            const projectData = {
+                name: document.getElementById('new-project-name').value,
+                folder: document.getElementById('new-project-folder').value,
+                description: document.getElementById('new-project-desc').value,
+                files: uploadedFiles.map((file, index) => ({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    assigned_dervis: fileAssignments[index]
+                }))
+            };
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Oluşturuluyor...';
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                alert('🎉 Proje başarıyla oluşturuldu!\nDervişler çalışmaya başladı!');
+                closeModal('new-project-modal');
+                switchView('projects');
+                loadProjects();
+            } catch (error) {
+                alert('Hata: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic"></i> Projeyi Başlat';
+            }
+        }
+
         // Data Loading Functions
         async function loadDashboardStats() {
             try {
-                const [workersRes, projectsRes] = await Promise.all([
+                const [workersRes, emareRes] = await Promise.all([
                     fetch('/workers'),
-                    fetch('/projects')
+                    fetch('/emare/projects')
                 ]);
 
                 const workers = await workersRes.json();
-                const projects = await projectsRes.json();
+                const emareData = await emareRes.json();
+                const projects = emareData.projects || [];
+                
+                const production = projects.filter(p => p.phase === 'production').length;
+                const avgCompletion = projects.reduce((s,p) => s + (p.completion_percent||0), 0) / (projects.length||1);
 
                 document.getElementById('active-projects').textContent = projects.length || 0;
                 document.getElementById('active-ai').textContent = workers.available || 0;
-                document.getElementById('completed-tasks').textContent = 
-                    projects.reduce((sum, p) => sum + (p.completed_tasks || 0), 0);
-                document.getElementById('avg-time').textContent = 
-                    Math.round(projects.reduce((sum, p) => sum + (p.avg_time || 0), 0) / (projects.length || 1));
+                document.getElementById('completed-tasks').textContent = production;
+                document.getElementById('avg-time').textContent = avgCompletion.toFixed(0) + '%';
 
             } catch (error) {
                 console.error('Failed to load stats:', error);
@@ -1509,52 +1750,222 @@
             }
         }
 
+        let allProjects = [];
+        let currentPhaseFilter = 'all';
+
         async function loadProjects() {
             try {
-                const res = await fetch('/projects');
-                const projects = await res.json();
+                const res = await fetch('/emare/projects');
+                const data = await res.json();
+                allProjects = data.projects || [];
                 
-                const container = document.getElementById('projects-list');
-                
-                if (projects.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>Henüz proje yok</p></div>';
-                    return;
-                }
-
-                container.innerHTML = '';
-                projects.forEach(project => {
-                    const progress = project.progress?.percentage || 0;
-                    const status = project.status || 'pending';
-                    
-                    container.innerHTML += `
-                        <div class="project-card">
-                            <div class="project-header">
-                                <h3 class="project-title">${project.name}</h3>
-                                <span class="worker-status ${status}">${status.toUpperCase()}</span>
-                            </div>
-                            <div class="progress-info">
-                                <span>İlerleme</span>
-                                <span>${progress.toFixed(0)}%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${progress}%"></div>
-                            </div>
-                            <div style="margin-top: 1rem; font-size: 0.9rem; color: var(--gray-600);">
-                                <i class="fas fa-tasks"></i> ${project.total_tasks || 0} tasks • 
-                                <i class="fas fa-clock"></i> ${project.estimated_hours || 0}h
-                            </div>
-                        </div>
-                    `;
-                });
+                renderProjectSummary(allProjects);
+                filterProjects('all');
 
             } catch (error) {
                 console.error('Failed to load projects:', error);
+                document.getElementById('projects-list').innerHTML = `<div style="text-align:center;padding:2rem;color:var(--red-500);"><i class="fas fa-exclamation-triangle"></i> Yüklenemedi: ${error.message}</div>`;
             }
+        }
+
+        function renderProjectSummary(projects) {
+            const phases = {};
+            projects.forEach(p => {
+                const ph = p.phase || 'scaffold';
+                if (!phases[ph]) phases[ph] = {count:0, totalPct:0};
+                phases[ph].count++;
+                phases[ph].totalPct += (p.completion_percent || 0);
+            });
+            
+            const phaseConfig = {
+                production: {icon:'🟢', color:'#22c55e', label:'Production'},
+                beta: {icon:'🔵', color:'#06b6d4', label:'Beta'},
+                mvp: {icon:'🟡', color:'#f59e0b', label:'MVP'},
+                scaffold: {icon:'🟣', color:'#a855f7', label:'Scaffold'},
+                idea: {icon:'⚪', color:'#9ca3af', label:'Idea'}
+            };
+            
+            const avgHealth = projects.reduce((s,p) => s + (p.health_score||0), 0) / (projects.length||1);
+            const avgCompletion = projects.reduce((s,p) => s + (p.completion_percent||0), 0) / (projects.length||1);
+            
+            let html = `
+                <div style="background:linear-gradient(135deg,var(--brand-500),var(--brand-700));color:white;padding:1.2rem;border-radius:12px;text-align:center;">
+                    <div style="font-size:2.5rem;font-weight:bold;">${projects.length}</div>
+                    <div style="font-size:0.85rem;opacity:0.9;">Toplam Proje</div>
+                </div>
+                <div style="background:var(--gray-50);padding:1.2rem;border-radius:12px;text-align:center;border:2px solid var(--gray-200);">
+                    <div style="font-size:2.5rem;font-weight:bold;color:var(--brand-600);">%${avgCompletion.toFixed(0)}</div>
+                    <div style="font-size:0.85rem;color:var(--gray-600);">Ort. Tamamlanma</div>
+                </div>
+                <div style="background:var(--gray-50);padding:1.2rem;border-radius:12px;text-align:center;border:2px solid var(--gray-200);">
+                    <div style="font-size:2.5rem;font-weight:bold;color:var(--green-500);">${avgHealth.toFixed(0)}</div>
+                    <div style="font-size:0.85rem;color:var(--gray-600);">Ort. Sağlık</div>
+                </div>`;
+            
+            for (const [ph, cfg] of Object.entries(phaseConfig)) {
+                if (phases[ph]) {
+                    html += `<div style="background:var(--gray-50);padding:1.2rem;border-radius:12px;text-align:center;border-left:4px solid ${cfg.color};cursor:pointer;" onclick="filterProjects('${ph}')">
+                        <div style="font-size:2rem;font-weight:bold;color:${cfg.color};">${phases[ph].count}</div>
+                        <div style="font-size:0.85rem;color:var(--gray-600);">${cfg.icon} ${cfg.label}</div>
+                    </div>`;
+                }
+            }
+            
+            document.getElementById('project-summary-cards').innerHTML = html;
+        }
+
+        function filterProjects(phase) {
+            currentPhaseFilter = phase;
+            const searchTerm = (document.getElementById('project-search')?.value || '').toLowerCase();
+            
+            // Filter butonlarını güncelle
+            document.querySelectorAll('#projects-view .filter-btn').forEach(b => b.classList.remove('active'));
+            const btns = document.querySelectorAll('#projects-view .filter-btn');
+            btns.forEach(b => { if (b.textContent.toLowerCase().includes(phase) || (phase === 'all' && b.textContent === 'Tümü')) b.classList.add('active'); });
+            
+            let filtered = allProjects;
+            if (phase !== 'all') {
+                filtered = allProjects.filter(p => (p.phase || 'scaffold') === phase);
+            }
+            if (searchTerm) {
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(searchTerm) || (p.description||'').toLowerCase().includes(searchTerm));
+            }
+            
+            renderProjects(filtered);
+        }
+
+        function renderProjects(projects) {
+            const container = document.getElementById('projects-list');
+            
+            if (projects.length === 0) {
+                container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--gray-600);grid-column:1/-1;"><i class="fas fa-folder-open" style="font-size:3rem;margin-bottom:1rem;display:block;"></i>Sonuç bulunamadı</div>';
+                return;
+            }
+
+            const phaseColors = {production:'#22c55e', beta:'#06b6d4', mvp:'#f59e0b', scaffold:'#a855f7', idea:'#9ca3af'};
+            const statusLabels = {production:'Üretimde', development:'Geliştirmede', ready:'Hazır', planning:'Planlama'};
+            
+            container.innerHTML = projects.map(p => {
+                const phase = p.phase || 'scaffold';
+                const pct = p.completion_percent || 0;
+                const health = p.health_score || 0;
+                const color = phaseColors[phase] || '#9ca3af';
+                const icon = p.icon || '📦';
+                const tech = (p.tech || []).slice(0, 3).join(', ') || '—';
+                const lastActive = p.last_active ? new Date(p.last_active).toLocaleDateString('tr-TR') : '—';
+                const commits = p.commit_count || 0;
+                const codeFiles = p.code_files || 0;
+                const fileCount = p.file_count || 0;
+                const statusLabel = statusLabels[p.status] || p.status;
+                
+                return `
+                    <div class="project-card" style="border-left:4px solid ${color};padding:1.2rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;">
+                            <div>
+                                <div style="font-size:1.3rem;margin-bottom:0.2rem;">${icon} <strong>${p.name}</strong></div>
+                                <div style="font-size:0.8rem;color:var(--gray-600);">${p.category || ''} • ${statusLabel}</div>
+                            </div>
+                            <span style="background:${color}20;color:${color};padding:2px 8px;border-radius:6px;font-size:0.75rem;font-weight:bold;">${phase.toUpperCase()}</span>
+                        </div>
+                        <div style="font-size:0.85rem;color:var(--gray-600);margin-bottom:0.75rem;line-height:1.4;">${(p.description||'').substring(0,100)}${(p.description||'').length>100?'...':''}</div>
+                        <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--gray-600);margin-bottom:0.5rem;">
+                            <span>İlerleme</span>
+                            <span style="font-weight:bold;color:${color};">${pct}%</span>
+                        </div>
+                        <div class="progress-bar" style="height:8px;background:var(--gray-200);border-radius:4px;overflow:hidden;">
+                            <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;transition:width 0.5s;"></div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-top:0.75rem;font-size:0.75rem;">
+                            <div style="text-align:center;background:var(--gray-50);padding:0.3rem;border-radius:4px;">
+                                <div style="font-weight:bold;">${codeFiles}</div>
+                                <div style="color:var(--gray-500);">Kod</div>
+                            </div>
+                            <div style="text-align:center;background:var(--gray-50);padding:0.3rem;border-radius:4px;">
+                                <div style="font-weight:bold;">${commits}</div>
+                                <div style="color:var(--gray-500);">Commit</div>
+                            </div>
+                            <div style="text-align:center;background:var(--gray-50);padding:0.3rem;border-radius:4px;">
+                                <div style="font-weight:bold;">${health}</div>
+                                <div style="color:var(--gray-500);">Sağlık</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-top:0.5rem;font-size:0.75rem;color:var(--gray-500);">
+                            <span>🛠️ ${tech}</span>
+                            <span>📅 ${lastActive}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         async function loadTasks(status = 'all') {
             const container = document.getElementById('tasks-list');
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-tasks"></i><p>Task listesi yükleniyor...</p></div>';
+            container.innerHTML = '<div style="text-align:center;padding:2rem;"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>';
+            try {
+                const res = await fetch('/analytics/overview');
+                const data = await res.json();
+                const taskStats = data.tasks || {};
+                const byStatus = taskStats.by_status || {};
+                const total = taskStats.total_tasks || 0;
+                
+                if (total === 0) {
+                    container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--gray-600);"><i class="fas fa-tasks" style="font-size:3rem;margin-bottom:1rem;display:block;"></i>Henüz görev yok</div>';
+                    return;
+                }
+
+                let html = `
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.5rem;">
+                        <div style="background:var(--gray-50);padding:1rem;border-radius:8px;text-align:center;">
+                            <div style="font-size:2rem;font-weight:bold;color:var(--brand-500);">${total}</div>
+                            <div style="font-size:0.85rem;color:var(--gray-600);">Toplam</div>
+                        </div>
+                        <div style="background:var(--gray-50);padding:1rem;border-radius:8px;text-align:center;">
+                            <div style="font-size:2rem;font-weight:bold;color:var(--amber-500);">${byStatus.pending || 0}</div>
+                            <div style="font-size:0.85rem;color:var(--gray-600);">Bekleyen</div>
+                        </div>
+                        <div style="background:var(--gray-50);padding:1rem;border-radius:8px;text-align:center;">
+                            <div style="font-size:2rem;font-weight:bold;color:var(--brand-600);">${byStatus.in_progress || 0}</div>
+                            <div style="font-size:0.85rem;color:var(--gray-600);">Devam Eden</div>
+                        </div>
+                        <div style="background:var(--gray-50);padding:1rem;border-radius:8px;text-align:center;">
+                            <div style="font-size:2rem;font-weight:bold;color:var(--green-500);">${byStatus.completed || 0}</div>
+                            <div style="font-size:0.85rem;color:var(--gray-600);">Tamamlanan</div>
+                        </div>
+                        <div style="background:var(--gray-50);padding:1rem;border-radius:8px;text-align:center;">
+                            <div style="font-size:2rem;font-weight:bold;color:var(--red-500);">${byStatus.failed || 0}</div>
+                            <div style="font-size:0.85rem;color:var(--gray-600);">Başarısız</div>
+                        </div>
+                    </div>
+                    <div style="background:var(--gray-50);padding:1rem;border-radius:8px;">
+                        <h3 style="margin-bottom:0.5rem;">Görev Durumu Dağılımı</h3>
+                        <table style="width:100%;border-collapse:collapse;">
+                            <tr style="border-bottom:1px solid var(--gray-200);">
+                                <th style="text-align:left;padding:0.5rem;">Durum</th>
+                                <th style="text-align:right;padding:0.5rem;">Sayı</th>
+                                <th style="text-align:right;padding:0.5rem;">Oran</th>
+                            </tr>`;
+                
+                for (const [st, count] of Object.entries(byStatus)) {
+                    const pct = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+                    const colors = {pending:'#f59e0b', in_progress:'#6366f1', completed:'#22c55e', failed:'#ef4444', assigned:'#3b82f6', blocked:'#9333ea'};
+                    html += `<tr style="border-bottom:1px solid var(--gray-200);">
+                        <td style="padding:0.5rem;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colors[st]||'#999'};margin-right:0.5rem;"></span>${st}</td>
+                        <td style="text-align:right;padding:0.5rem;font-weight:bold;">${count}</td>
+                        <td style="text-align:right;padding:0.5rem;">${pct}%</td>
+                    </tr>`;
+                }
+                html += '</table></div>';
+                
+                if (taskStats.overdue_tasks > 0) {
+                    html += `<div style="margin-top:1rem;padding:1rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;">
+                        ⚠️ <strong>${taskStats.overdue_tasks}</strong> görev süresi geçmiş!
+                    </div>`;
+                }
+                
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--red-500);"><i class="fas fa-exclamation-triangle"></i> Yüklenemedi: ${error.message}</div>`;
+            }
         }
 
         async function refreshActivity() {
@@ -1728,6 +2139,239 @@
             alert('Rapor indiriliyor...');
         }
 
+        // ==========================================
+        // MESAJLAŞMA SİSTEMİ
+        // ==========================================
+        
+        document.getElementById('msg-type').addEventListener('change', function() {
+            const type = this.value;
+            document.getElementById('msg-recipient-group').style.display = type === 'peer' ? 'block' : 'none';
+            document.getElementById('msg-depth-group').style.display = type === 'directive' ? 'block' : 'none';
+        });
+
+        async function sendMessage() {
+            const type = document.getElementById('msg-type').value;
+            const sender = document.getElementById('msg-sender').value;
+            const subject = document.getElementById('msg-subject').value;
+            const body = document.getElementById('msg-body').value;
+            const resultDiv = document.getElementById('msg-result');
+            
+            if (!sender || !subject) {
+                resultDiv.innerHTML = '<div style="color:var(--red-500);">Gönderen ve konu zorunlu!</div>';
+                return;
+            }
+            
+            let url, params;
+            if (type === 'directive') {
+                const depth = document.getElementById('msg-depth').value;
+                url = `/messages/directive?sender=${encodeURIComponent(sender)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}&target_depth=${depth}`;
+            } else if (type === 'broadcast') {
+                url = `/messages/broadcast?sender=${encodeURIComponent(sender)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            } else if (type === 'report') {
+                url = `/messages/report?sender=${encodeURIComponent(sender)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            } else if (type === 'peer') {
+                const recipient = document.getElementById('msg-recipient').value;
+                if (!recipient) { resultDiv.innerHTML = '<div style="color:var(--red-500);">Alıcı adresi zorunlu!</div>'; return; }
+                url = `/messages/peer?sender=${encodeURIComponent(sender)}&recipient=${encodeURIComponent(recipient)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            }
+            
+            try {
+                const res = await fetch(url, { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    resultDiv.innerHTML = `<div style="background:#f0fdf4;color:#166534;padding:0.75rem;border-radius:8px;">
+                        ✅ <strong>${data.message_uid}</strong> gönderildi! Ulaşılan: ${data.cascade_reached || 0} düğüm
+                    </div>`;
+                    loadMessageStats();
+                } else {
+                    resultDiv.innerHTML = `<div style="color:var(--red-500);">❌ ${data.detail || 'Hata'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div style="color:var(--red-500);">❌ ${error.message}</div>`;
+            }
+        }
+
+        async function loadMessageStats() {
+            try {
+                const res = await fetch('/messages/stats');
+                const stats = await res.json();
+                const container = document.getElementById('msg-stats-container');
+                
+                const byType = stats.by_type || {};
+                let typeHtml = '';
+                const typeIcons = {directive:'📩',broadcast:'📢',report:'📊',peer:'👥',escalation:'🚨'};
+                for (const [t, count] of Object.entries(byType)) {
+                    typeHtml += `<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid var(--gray-100);">
+                        <span>${typeIcons[t]||'📧'} ${t}</span><strong>${count}</strong>
+                    </div>`;
+                }
+                
+                container.innerHTML = `
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
+                        <div style="background:var(--gray-50);padding:1rem;border-radius:8px;text-align:center;">
+                            <div style="font-size:2rem;font-weight:bold;color:var(--brand-500);">${stats.total_messages || 0}</div>
+                            <div style="font-size:0.8rem;color:var(--gray-600);">Toplam Mesaj</div>
+                        </div>
+                        <div style="background:var(--gray-50);padding:1rem;border-radius:8px;text-align:center;">
+                            <div style="font-size:2rem;font-weight:bold;color:var(--red-500);">${stats.total_unread || 0}</div>
+                            <div style="font-size:0.8rem;color:var(--gray-600);">Okunmamış</div>
+                        </div>
+                        <div style="background:var(--gray-50);padding:1rem;border-radius:8px;text-align:center;">
+                            <div style="font-size:2rem;font-weight:bold;color:var(--green-500);">${stats.total_deliveries || 0}</div>
+                            <div style="font-size:0.8rem;color:var(--gray-600);">Teslimat</div>
+                        </div>
+                        <div style="background:var(--gray-50);padding:1rem;border-radius:8px;text-align:center;">
+                            <div style="font-size:2rem;font-weight:bold;color:var(--amber-500);">${stats.active_inboxes || 0}</div>
+                            <div style="font-size:0.8rem;color:var(--gray-600);">Aktif Kutu</div>
+                        </div>
+                    </div>
+                    <h3 style="margin-bottom:0.5rem;">Tip Dağılımı</h3>
+                    ${typeHtml || '<div style="color:var(--gray-600);">Henüz mesaj yok</div>'}
+                    ${stats.dead_letters > 0 ? `<div style="margin-top:0.5rem;color:var(--red-500);">⚠️ ${stats.dead_letters} ölü mesaj</div>` : ''}
+                    ${stats.expired_messages > 0 ? `<div style="margin-top:0.3rem;color:var(--amber-500);">TTL geçmiş: ${stats.expired_messages}</div>` : ''}
+                `;
+                
+                // Sidebar unread badge güncelle
+                const badge = document.getElementById('unread-badge');
+                if (stats.total_unread > 0) {
+                    badge.textContent = stats.total_unread;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Mesaj istatistikleri yüklenemedi:', error);
+            }
+        }
+
+        async function loadInbox(unreadOnly = false) {
+            const address = document.getElementById('inbox-address').value;
+            const container = document.getElementById('inbox-container');
+            if (!address) { container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray-600);">Adres girin</div>'; return; }
+            
+            container.innerHTML = '<div style="text-align:center;padding:2rem;"><i class="fas fa-spinner fa-spin"></i></div>';
+            try {
+                const res = await fetch(`/nodes/${encodeURIComponent(address)}/inbox?unread_only=${unreadOnly}`);
+                const data = await res.json();
+                
+                if (!data.messages || data.messages.length === 0) {
+                    container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--gray-600);">
+                        <i class="fas fa-inbox" style="font-size:2rem;margin-bottom:0.5rem;display:block;"></i>
+                        ${address} için ${unreadOnly ? 'okunmamış ' : ''}mesaj yok
+                    </div>`;
+                    return;
+                }
+                
+                let html = `<div style="margin-bottom:0.5rem;color:var(--gray-600);font-size:0.85rem;">
+                    ${data.message_count} mesaj • ${data.unread_count} okunmamış
+                </div>`;
+                
+                data.messages.forEach(m => {
+                    const isRead = m.is_read;
+                    const typeIcons = {directive:'📩',broadcast:'📢',report:'📊',peer:'👥',escalation:'🚨'};
+                    const priorityColors = {critical:'#ef4444',high:'#f59e0b',medium:'#6366f1',low:'#9ca3af'};
+                    const time = new Date(m.created_at).toLocaleString('tr-TR');
+                    
+                    html += `<div style="display:flex;align-items:flex-start;gap:1rem;padding:0.75rem;border-bottom:1px solid var(--gray-100);background:${isRead?'transparent':'rgba(99,102,241,0.04)'};cursor:pointer;" 
+                             onclick="${isRead ? '' : `markRead('${address}','${m.uid}')`}">
+                        <div style="font-size:1.5rem;">${typeIcons[m.type]||'📧'}</div>
+                        <div style="flex:1;">
+                            <div style="font-weight:${isRead?'normal':'bold'};margin-bottom:0.2rem;">${m.subject}</div>
+                            <div style="font-size:0.8rem;color:var(--gray-600);">  
+                                <span style="background:${priorityColors[m.priority]||'#999'};color:white;padding:0 4px;border-radius:3px;font-size:0.7rem;">${m.priority}</span>
+                                ${m.type} • ${m.sender} • ${time}
+                            </div>
+                            ${m.body ? `<div style="font-size:0.85rem;color:var(--gray-600);margin-top:0.3rem;">${m.body.substring(0,120)}${m.body.length>120?'...':''}</div>` : ''}
+                        </div>
+                        <div style="display:flex;gap:0.3rem;">
+                            ${!isRead ? `<button onclick="event.stopPropagation();markRead('${address}','${m.uid}')" style="background:none;border:none;cursor:pointer;color:var(--brand-500);font-size:0.8rem;" title="Okundu">✅</button>` : ''}
+                            <button onclick="event.stopPropagation();deleteMessage('${address}','${m.uid}')" style="background:none;border:none;cursor:pointer;color:var(--red-500);font-size:0.8rem;" title="Sil">🗑️</button>
+                        </div>
+                    </div>`;
+                });
+                
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--red-500);">❌ ${error.message}</div>`;
+            }
+        }
+
+        async function markRead(address, uid) {
+            try {
+                await fetch(`/nodes/${encodeURIComponent(address)}/inbox/${uid}/read`, { method: 'PUT' });
+                loadInbox();
+                loadMessageStats();
+            } catch (e) { console.error(e); }
+        }
+
+        async function markAllRead() {
+            const address = document.getElementById('inbox-address').value;
+            if (!address) return;
+            try {
+                await fetch(`/nodes/${encodeURIComponent(address)}/inbox/read-all`, { method: 'PUT' });
+                loadInbox();
+                loadMessageStats();
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteMessage(address, uid) {
+            if (!confirm('Mesajı silmek istediğinize emin misiniz?')) return;
+            try {
+                await fetch(`/nodes/${encodeURIComponent(address)}/inbox/${uid}`, { method: 'DELETE' });
+                loadInbox();
+                loadMessageStats();
+            } catch (e) { console.error(e); }
+        }
+
+        // ==========================================
+        // ANALİTİK (Canlı API)
+        // ==========================================
+
+        async function loadAnalytics() {
+            try {
+                const res = await fetch('/analytics/overview');
+                const data = await res.json();
+                
+                // Görev dağılımı chartını güncelle
+                const taskStats = data.tasks?.by_status || {};
+                const distChart = Chart.getChart('taskDistributionChart');
+                if (distChart) {
+                    distChart.data.labels = Object.keys(taskStats);
+                    distChart.data.datasets[0].data = Object.values(taskStats);
+                    distChart.update();
+                }
+                
+                // Node istatistiklerini güncelle
+                const nodes = data.nodes || {};
+                const workerChart = Chart.getChart('workerChart');
+                if (workerChart) {
+                    workerChart.data.datasets[0].data = [
+                        nodes.active_nodes || 0,
+                        nodes.idle_nodes || 0,
+                        nodes.offline_nodes || 0
+                    ];
+                    workerChart.update();
+                }
+
+                // Mesaj istatistikleri
+                const msgStats = data.messages || {};
+                const msgByType = msgStats.by_type || {};
+                const perfChart = Chart.getChart('workerPerformanceChart');
+                if (perfChart) {
+                    perfChart.data.labels = Object.keys(msgByType).length > 0 ? Object.keys(msgByType) : ['directive','report','broadcast','peer','escalation'];
+                    perfChart.data.datasets = [{
+                        label: 'Mesaj Dağılımı',
+                        data: Object.keys(msgByType).length > 0 ? Object.values(msgByType) : [0,0,0,0,0],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)'
+                    }];
+                    perfChart.update();
+                }
+            } catch (error) {
+                console.error('Analytics yüklenemedi:', error);
+            }
+        }
+
         function clearLogs() {
             document.getElementById('logs-container').innerHTML = '<div>[' + new Date().toISOString() + '] Logs cleared</div>';
         }
@@ -1738,15 +2382,231 @@
             // Update chart data based on period
         }
 
+        // ==========================================
+        // DERGAH SOHBET ODASI (Canlı API)
+        // ==========================================
+
+        let currentDergahRoom = 'genel';
+        let dergahLastMessageUid = null;
+
+        async function loadDergahRooms() {
+            try {
+                const res = await fetch('/dergah/rooms');
+                const rooms = await res.json();
+                const container = document.getElementById('dergah-rooms');
+                container.innerHTML = rooms.map(r => `
+                    <div onclick="switchDergahRoom('${r.name}')"
+                         style="padding:0.6rem 0.8rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:0.5rem;
+                                ${r.name===currentDergahRoom?'background:var(--brand-50);border:1px solid var(--brand-200);':'background:var(--gray-50);border:1px solid transparent;'}
+                                transition:all 0.15s;"
+                         onmouseover="this.style.background='var(--brand-50)'" onmouseout="if('${r.name}'!==currentDergahRoom)this.style.background='var(--gray-50)'">
+                        <span style="font-size:1.2rem;">${r.icon}</span>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:600;font-size:0.85rem;">${r.name}</div>
+                            <div style="font-size:0.75rem;color:var(--gray-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.description}</div>
+                        </div>
+                        ${r.message_count ? `<span style="background:var(--gray-200);padding:0 6px;border-radius:10px;font-size:0.75rem;">${r.message_count}</span>` : ''}
+                    </div>
+                `).join('');
+            } catch(e) { console.error('Dergah odaları yüklenemedi:', e); }
+        }
+
+        function switchDergahRoom(room) {
+            currentDergahRoom = room;
+            const roomInfo = { genel: {icon:'🕌',title:'Genel'}, backend: {icon:'⚙️',title:'Backend'}, frontend: {icon:'🎨',title:'Frontend'}, altyapi: {icon:'🏗️',title:'Altyapı'}, guvenlik: {icon:'🛡️',title:'Güvenlik'}, ai: {icon:'🤖',title:'AI'}, acil: {icon:'🚨',title:'Acil Durum'} };
+            const info = roomInfo[room] || {icon:'💬',title:room};
+            document.getElementById('dergah-room-icon').textContent = info.icon;
+            document.getElementById('dergah-room-title').textContent = info.title;
+            dergahLastMessageUid = null;
+            loadDergahRooms();
+            loadDergahMessages();
+            loadDergahPinned();
+        }
+
+        async function loadDergahMessages() {
+            try {
+                const res = await fetch(`/dergah/messages?room=${currentDergahRoom}&limit=100`);
+                const messages = await res.json();
+                const container = document.getElementById('dergah-messages');
+                if (!messages.length) {
+                    container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--gray-500);"><i class="fas fa-comments" style="font-size:2rem;display:block;margin-bottom:0.5rem;"></i>Henüz mesaj yok. İlk mesajı siz gönderin!</div>';
+                    return;
+                }
+                container.innerHTML = messages.map(m => renderDergahMsg(m)).join('');
+                container.scrollTop = container.scrollHeight;
+                if (messages.length) dergahLastMessageUid = messages[messages.length-1].uid;
+            } catch(e) { console.error('Dergah mesajları yüklenemedi:', e); }
+        }
+
+        function renderDergahMsg(m) {
+            const time = new Date(m.created_at).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+            const typeColors = { chat:'', system:'background:#f0f9ff;border-left:3px solid #0ea5e9;', github:'background:#f5f3ff;border-left:3px solid #8b5cf6;', file_share:'background:#fefce8;border-left:3px solid #eab308;', deploy:'background:#f0fdf4;border-left:3px solid #22c55e;', alert:'background:#fef2f2;border-left:3px solid #ef4444;' };
+            const style = typeColors[m.message_type] || '';
+            const reactions = m.reactions && Object.keys(m.reactions).length 
+                ? `<div style="display:flex;gap:0.3rem;margin-top:0.3rem;">${Object.entries(m.reactions).map(([emoji,users]) => `<span style="background:var(--gray-100);padding:1px 6px;border-radius:10px;font-size:0.8rem;cursor:pointer;" onclick="addDergahReaction('${m.uid}','${emoji}')">${emoji} ${users.length}</span>`).join('')}</div>` : '';
+            const pinBtn = m.pinned ? `<span style="color:#eab308;font-size:0.75rem;" title="Sabitlenmiş">📌</span>` : '';
+            return `<div style="padding:0.6rem 0.8rem;border-radius:8px;${style}" class="dergah-msg" data-uid="${m.uid}">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.2rem;">
+                    <span style="font-size:1.1rem;">${m.sender_icon}</span>
+                    <strong style="font-size:0.85rem;">${m.sender_name}</strong>
+                    ${pinBtn}
+                    <span style="margin-left:auto;font-size:0.75rem;color:var(--gray-500);">${time}</span>
+                    <span style="font-size:0.7rem;cursor:pointer;" onclick="showDergahMsgMenu('${m.uid}')" title="Menü">⋯</span>
+                </div>
+                <div style="font-size:0.9rem;padding-left:1.8rem;">${formatDergahContent(m.content)}</div>
+                ${m.reply_to ? `<div style="font-size:0.75rem;color:var(--gray-500);padding-left:1.8rem;">↳ Yanıt</div>` : ''}
+                ${reactions}
+            </div>`;
+        }
+
+        function formatDergahContent(content) {
+            return content
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+        }
+
+        async function sendDergahMessage() {
+            const input = document.getElementById('dergah-input');
+            const content = input.value.trim();
+            if (!content) return;
+            const senderId = document.getElementById('dergah-sender').value;
+            try {
+                await fetch('/dergah/messages', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        room: currentDergahRoom,
+                        sender_id: senderId,
+                        sender_name: senderId,
+                        content: content,
+                        sender_icon: '🧙‍♂️'
+                    })
+                });
+                input.value = '';
+                loadDergahMessages();
+            } catch(e) { console.error('Mesaj gönderilemedi:', e); }
+        }
+
+        async function loadDergahOnline() {
+            try {
+                const res = await fetch('/dergah/online?timeout=60');
+                const online = await res.json();
+                document.getElementById('dergah-online-count').textContent = `(${online.length})`;
+                const container = document.getElementById('dergah-online-list');
+                if (!online.length) {
+                    container.innerHTML = '<div style="font-size:0.85rem;color:var(--gray-500);">Kimse yok</div>';
+                } else {
+                    container.innerHTML = online.map(d => `
+                        <div style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0;">
+                            <span style="width:8px;height:8px;border-radius:50%;background:#22c55e;"></span>
+                            <span style="font-size:0.85rem;">${d}</span>
+                        </div>
+                    `).join('');
+                }
+                // Mini istatistikler
+                const statsRes = await fetch('/dergah/stats');
+                const stats = await statsRes.json();
+                document.getElementById('dergah-stats-mini').innerHTML = `
+                    <div>💬 Toplam: ${stats.total_messages}</div>
+                    <div>📌 Sabit: ${stats.pinned_count}</div>
+                    <div>👥 Online: ${stats.online_count}</div>
+                    ${stats.top_senders?.length ? `<div>🏆 En Aktif: ${stats.top_senders[0].sender_id}</div>` : ''}
+                `;
+            } catch(e) { console.error('Online durum yüklenemedi:', e); }
+        }
+
+        async function loadDergahPinned() {
+            try {
+                const res = await fetch(`/dergah/pinned?room=${currentDergahRoom}`);
+                const pinned = await res.json();
+                const container = document.getElementById('dergah-pinned');
+                if (!pinned.length) {
+                    container.innerHTML = '—';
+                    return;
+                }
+                container.innerHTML = pinned.map(m => `
+                    <div style="padding:0.3rem 0;border-bottom:1px solid var(--gray-100);">
+                        <div style="font-size:0.8rem;">${m.content.substring(0,50)}${m.content.length>50?'...':''}</div>
+                        <div style="font-size:0.7rem;color:var(--gray-500);">${m.sender_name}</div>
+                    </div>
+                `).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        async function searchDergah() {
+            const q = document.getElementById('dergah-search').value.trim();
+            if (!q) { loadDergahMessages(); return; }
+            try {
+                const res = await fetch(`/dergah/search?q=${encodeURIComponent(q)}&room=${currentDergahRoom}`);
+                const results = await res.json();
+                const container = document.getElementById('dergah-messages');
+                if (!results.length) {
+                    container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--gray-500);">Sonuç bulunamadı</div>';
+                    return;
+                }
+                container.innerHTML = results.map(m => renderDergahMsg(m)).join('');
+            } catch(e) { console.error(e); }
+        }
+
+        async function addDergahReaction(uid, emoji) {
+            try {
+                await fetch(`/dergah/messages/${uid}/reaction`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ emoji: emoji, sender_id: document.getElementById('dergah-sender').value })
+                });
+                loadDergahMessages();
+            } catch(e) { console.error(e); }
+        }
+
+        function showDergahMsgMenu(uid) {
+            const emojis = ['👍','❤️','🔥','👀','🎉','✅'];
+            const existing = document.querySelector('.dergah-msg-menu');
+            if (existing) existing.remove();
+            const msgEl = document.querySelector(`[data-uid="${uid}"]`);
+            if (!msgEl) return;
+            const menu = document.createElement('div');
+            menu.className = 'dergah-msg-menu';
+            menu.style.cssText = 'position:absolute;right:0;top:100%;background:white;border:1px solid var(--gray-200);border-radius:8px;padding:0.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:100;display:flex;gap:0.3rem;flex-wrap:wrap;width:160px;';
+            menu.innerHTML = emojis.map(e => `<span style="cursor:pointer;font-size:1.1rem;padding:2px;" onclick="addDergahReaction('${uid}','${e}');this.parentElement.remove();">${e}</span>`).join('') +
+                `<button onclick="pinDergahMsg('${uid}');this.parentElement.remove();" style="width:100%;margin-top:0.3rem;padding:0.3rem;border:1px solid var(--gray-200);border-radius:4px;background:white;cursor:pointer;font-size:0.8rem;">📌 Sabitle</button>` +
+                `<button onclick="deleteDergahMsg('${uid}');this.parentElement.remove();" style="width:100%;margin-top:0.2rem;padding:0.3rem;border:1px solid var(--gray-200);border-radius:4px;background:white;cursor:pointer;font-size:0.8rem;color:#ef4444;">🗑️ Sil</button>`;
+            msgEl.style.position = 'relative';
+            msgEl.appendChild(menu);
+            setTimeout(() => document.addEventListener('click', () => menu.remove(), {once:true}), 100);
+        }
+
+        async function pinDergahMsg(uid) {
+            try { await fetch(`/dergah/messages/${uid}/pin`, {method:'POST'}); loadDergahMessages(); loadDergahPinned(); } catch(e) { console.error(e); }
+        }
+
+        async function deleteDergahMsg(uid) {
+            if (!confirm('Mesajı silmek istediğinize emin misiniz?')) return;
+            try { await fetch(`/dergah/messages/${uid}`, {method:'DELETE'}); loadDergahMessages(); } catch(e) { console.error(e); }
+        }
+
+        async function populateDergahSenderList() {
+            try {
+                const res = await fetch('/workers');
+                const workers = await res.json();
+                const select = document.getElementById('dergah-sender');
+                select.innerHTML = workers.map(w => `<option value="${w.id}">${w.icon || '🧙‍♂️'} ${w.name}</option>`).join('');
+            } catch(e) { console.error(e); }
+        }
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadDashboardStats();
             refreshActivity();
             initCharts();
+            loadMessageStats(); // Unread badge için
+            initDropzone(); // Yeni proje drag & drop
+            populateDergahSenderList(); // Dergah sender dropdown
             
             // Auto refresh every 30 seconds
             setInterval(() => {
                 loadDashboardStats();
+                loadMessageStats();
                 if (document.getElementById('dashboard-view').style.display !== 'none') {
                     refreshActivity();
                 }

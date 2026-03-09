@@ -1,0 +1,16 @@
+{
+  "dervish": "{{PROJE_KLASOR}} Dervishi",
+  "proje": "{{PROJE_KLASOR}}",
+  "aciklama": "{{PROJE_ACIKLAMA}}",
+  "versiyon": "1.0.0",
+  "yetenekler": [
+    {
+      "id": "health-check",
+      "ad": "Sağlık Kontrolü",
+      "aciklama": "Projenin çalışıp çalışmadığını kontrol eder",
+      "girdi": {},
+      "cikti": {"durum": "string (saglikli|sorunlu)", "versiyon": "string", "uptime": "string"},
+      "etiketler": ["health", "monitoring", "durum"]
+    }
+  ]
+}

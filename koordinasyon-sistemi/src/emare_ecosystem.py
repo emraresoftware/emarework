@@ -31,7 +31,7 @@ logger = structlog.get_logger()
 
 EMARE_ROOT = Path("/Users/emre/Desktop/Emare")
 ORTAK_CALISMA_DIR = EMARE_ROOT / "EMARE_ORTAK_CALISMA"
-PROJECTS_JSON = ORTAK_CALISMA_DIR / "projects.json"
+PROJECTS_JSON = EMARE_ROOT / "projects.json"
 
 # Ortak dağıtılacak dosyalar
 ORTAK_FILES = [

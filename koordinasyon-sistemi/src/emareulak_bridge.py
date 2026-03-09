@@ -223,12 +223,22 @@ class EmareUlakBridge:
         if not task_uid:
             return None
         
-        # Görev durumunu al (API'den)
-        # TODO: task_distributor'dan task bilgisi al
+        # Görev durumunu task_distributor'ın belölçünden al
+        task = self.task_dist.tasks.get(task_uid)
+        if task:
+            return {
+                "project_id": project_id,
+                "task_uid": task_uid,
+                "status": task.status,
+                "progress_pct": task.progress_pct,
+                "assigned_to": task.assigned_to,
+                "subtask_count": len(task.subtask_uids),
+            }
+        
         return {
             "project_id": project_id,
             "task_uid": task_uid,
-            "status": "in_progress",  # Dinamik çekilecek
+            "status": "unknown",
             "progress_pct": 0,
         }
     

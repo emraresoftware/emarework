@@ -1,0 +1,11 @@
+# Environment
+APP_NAME={{PROJE_AD}}
+APP_PORT={{PROJE_PORT}}
+DEBUG=true
+SECRET_KEY=emare-secret-change-this
+
+# Database
+DATABASE_URL=sqlite:///data/{{PROJE_KLASOR}}.db
+
+# Redis (opsiyonel)
+REDIS_URL=redis://localhost:6379/0

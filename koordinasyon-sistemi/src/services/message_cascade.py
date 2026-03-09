@@ -85,6 +85,7 @@ class MessageCascade:
         self.messages: dict[str, CascadeMessage] = {}
         self.node_inbox: dict[str, list[str]] = {}   # address → message_uids
         self.node_outbox: dict[str, list[str]] = {}   # address → sent message_uids
+        self.node_read: dict[str, set[str]] = {}      # address → okunmuş message_uids
         self.dead_letters: list[CascadeMessage] = []
         
         # Callback'ler
@@ -320,16 +321,81 @@ class MessageCascade:
     def get_inbox(self, address: str, unread_only: bool = False) -> list[CascadeMessage]:
         """Düğümün gelen kutusunu getir"""
         msg_uids = self.node_inbox.get(address, [])
+        read_set = self.node_read.get(address, set())
         messages = []
         for uid in msg_uids:
             msg = self.messages.get(uid)
             if msg and not msg.is_expired:
+                if unread_only and uid in read_set:
+                    continue
                 messages.append(msg)
         return messages
     
     def get_inbox_count(self, address: str) -> int:
-        """Gelen kutusu mesaj sayısı"""
-        return len(self.node_inbox.get(address, []))
+        """Gelen kutusu toplam mesaj sayısı"""
+        return len(self.get_inbox(address))
+    
+    def get_unread_count(self, address: str) -> int:
+        """Düğümün okunmamış mesaj sayısı"""
+        return len(self.get_inbox(address, unread_only=True))
+    
+    def mark_as_read(self, address: str, message_uid: str) -> bool:
+        """
+        Mesajı okundu olarak işaretle.
+        
+        Returns:
+            True: başarılı, False: mesaj bulunamadı
+        """
+        msg_uids = self.node_inbox.get(address, [])
+        if message_uid not in msg_uids:
+            return False
+        
+        if address not in self.node_read:
+            self.node_read[address] = set()
+        self.node_read[address].add(message_uid)
+        return True
+    
+    def mark_all_as_read(self, address: str) -> int:
+        """Düğümün tüm mesajlarını okundu işaretle. Okundu sayısını döner."""
+        msg_uids = self.node_inbox.get(address, [])
+        if address not in self.node_read:
+            self.node_read[address] = set()
+        
+        before = len(self.node_read[address])
+        self.node_read[address].update(msg_uids)
+        return len(self.node_read[address]) - before
+    
+    def delete_message(self, address: str, message_uid: str) -> bool:
+        """Düğümün gelen kutusundan mesaj sil."""
+        msg_uids = self.node_inbox.get(address, [])
+        if message_uid in msg_uids:
+            msg_uids.remove(message_uid)
+            # Read set'ten de temizle
+            read_set = self.node_read.get(address, set())
+            read_set.discard(message_uid)
+            return True
+        return False
+    
+    def get_node_message_stats(self, address: str) -> dict:
+        """Düğüm bazında mesaj istatistikleri"""
+        inbox = self.get_inbox(address)
+        read_set = self.node_read.get(address, set())
+        unread = [m for m in inbox if m.message_uid not in read_set]
+        
+        by_type = {}
+        for msg in inbox:
+            by_type[msg.message_type] = by_type.get(msg.message_type, 0) + 1
+        
+        sent_uids = self.node_outbox.get(address, [])
+        
+        return {
+            "address": address,
+            "total_inbox": len(inbox),
+            "unread": len(unread),
+            "read": len(inbox) - len(unread),
+            "by_type": by_type,
+            "sent_count": len(sent_uids),
+        }
     
     # ─── Yardımcı ───────────────────────────────────────────────────────
     
@@ -338,21 +404,40 @@ class MessageCascade:
         if address not in self.node_inbox:
             self.node_inbox[address] = []
         self.node_inbox[address].append(message_uid)
+        
+        # Gönderenin outbox'ına da kaydet
+        msg = self.messages.get(message_uid)
+        if msg:
+            sender = msg.sender
+            if sender not in self.node_outbox:
+                self.node_outbox[sender] = []
+            if message_uid not in self.node_outbox[sender]:
+                self.node_outbox[sender].append(message_uid)
     
     def get_statistics(self) -> dict:
         """Mesajlaşma istatistikleri"""
         total = len(self.messages)
         by_type = {}
         total_reached = 0
+        expired = 0
+        total_unread = 0
         
         for msg in self.messages.values():
             by_type[msg.message_type] = by_type.get(msg.message_type, 0) + 1
             total_reached += msg.cascade_reached
+            if msg.is_expired:
+                expired += 1
+        
+        # Tüm düğümlerdeki okunmamış toplamı
+        for address in self.node_inbox:
+            total_unread += self.get_unread_count(address)
         
         return {
             "total_messages": total,
             "by_type": by_type,
             "total_deliveries": total_reached,
+            "total_unread": total_unread,
+            "expired_messages": expired,
             "dead_letters": len(self.dead_letters),
             "active_inboxes": len(self.node_inbox),
         }

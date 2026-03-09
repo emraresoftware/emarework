@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: {{PROJE_KLASOR}}
+    ports:
+      - "{{PROJE_PORT}}:{{PROJE_PORT}}"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    env_file:
+      - .env
+    restart: unless-stopped

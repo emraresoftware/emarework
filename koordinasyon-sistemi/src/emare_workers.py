@@ -2,10 +2,10 @@
 Emare AI Workers  (v2)
 ======================
 
-projects.json'dan 21 AI worker'ı yükler ve yönetir.
+projects.json'dan 43 AI worker'ı yükler ve yönetir.
 
 Yenilikler (v2):
-- Genişletilmiş uzmanlık haritası — 21 projenin tüm tech stack'i kapsandı
+- Genişletilmiş uzmanlık haritası — 43 projenin tüm tech stack'i kapsandı
 - is_running()       → local portunu TCP ping ile kontrol eder
 - start_locally()    → local_start_cmd ile projeyi başlatır
 - read_memory()      → hafıza MD dosyasını okur / snippet döndürür
@@ -29,7 +29,7 @@ import structlog
 logger = structlog.get_logger()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Uzmanlık Haritası  —  tüm 21 projenin tech stack'i buraya yansıtılıyor
+# Uzmanlık Haritası  —  tüm 43 projenin tech stack'i buraya yansıtılıyor
 # ─────────────────────────────────────────────────────────────────────────────
 
 _TECH_EXPERTISE: Dict[str, List[str]] = {
@@ -290,7 +290,7 @@ class EmareAIWorker:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class EmareAIWorkforce:
-    """Tüm 21 AI worker'ı yönetir."""
+    """Tüm 43 AI worker'ı yönetir."""
 
     def __init__(self, projects_json_path: str):
         self.projects_json_path = projects_json_path
@@ -431,7 +431,7 @@ class EmareAIWorkforce:
 
 _workforce: Optional[EmareAIWorkforce] = None
 _DEFAULT_JSON = (
-    Path(__file__).parent.parent.parent / "EMARE_ORTAK_CALISMA" / "projects.json"
+    Path(__file__).parent.parent.parent.parent / "projects.json"
 )
 
 
@@ -450,199 +450,6 @@ def reload_workforce() -> EmareAIWorkforce:
         _workforce.reload()
     else:
         _workforce = EmareAIWorkforce(str(_DEFAULT_JSON))
-    return _workforce
-
-
-if __name__ == "__main__":
-    wf = get_workforce()
-    stats = wf.get_workforce_stats()
-    print(f"🤖 Toplam: {stats['total_workers']}  Aktif: {stats['available_workers']}")
-    print(f"📊 Kategoriler: {stats['by_category']}")
-    print(f"🏆 Top-5 beceri: {list(stats['by_expertise'].items())[:5]}")
-    scored = wf.find_workers_with_scores(["python", "ai", "backend"], max_workers=3)
-    for w in scored:
-        print(f"  [{w['match_score']}] {w['icon']} {w['name']}  {w['expertise'][:4]}")
-        self.path = project_data.get("path")
-        self.memory_file = project_data.get("memory_file")
-        self.category = project_data.get("category", "General")
-        
-        # Worker özellikleri
-        self.expertise = self._determine_expertise()
-        self.availability = self.status == "production"  # Production olanlar daha güvenilir
-        self.priority = self._calculate_priority()
-        
-    def _determine_expertise(self) -> List[str]:
-        """AI'nın uzmanlık alanlarını belirle"""
-        expertise = []
-        
-        # Teknoloji bazlı uzmanlık
-        if "Python" in self.tech:
-            expertise.append("python")
-        if "FastAPI" in self.tech or "Flask" in self.tech or "Django" in self.tech:
-            expertise.append("backend")
-        if "React" in self.tech or "Vue" in self.tech or "Next.js" in self.tech:
-            expertise.append("frontend")
-        if "Laravel" in self.tech or "PHP" in self.tech:
-            expertise.append("php")
-        if "Gemini" in self.tech or "OpenAI" in self.tech:
-            expertise.append("ai")
-        if "Docker" in self.tech:
-            expertise.append("devops")
-        if "PostgreSQL" in self.tech or "MySQL" in self.tech or "SQLite" in self.tech:
-            expertise.append("database")
-        
-        # Kategori bazlı uzmanlık
-        if self.category == "SaaS Platform":
-            expertise.append("saas")
-        if self.category == "Infrastructure":
-            expertise.append("infrastructure")
-        if self.category == "Security":
-            expertise.append("security")
-        if self.category == "Automation":
-            expertise.append("automation")
-            
-        return list(set(expertise))  # Unique
-    
-    def _calculate_priority(self) -> int:
-        """Worker önceliğini hesapla (1-10)"""
-        priority = 5  # Base
-        
-        if self.status == "production":
-            priority += 3  # Production = daha güvenilir
-        elif self.status == "ready":
-            priority += 1
-            
-        # Teknoloji sayısı = deneyim
-        priority += min(len(self.tech) // 2, 2)
-        
-        return min(priority, 10)
-    
-    def can_handle_task(self, task_requirements: List[str]) -> bool:
-        """Bu AI, verilen task'ı yapabilir mi?"""
-        return any(req in self.expertise for req in task_requirements)
-    
-    def to_dict(self) -> Dict:
-        """Worker bilgilerini dict olarak dön"""
-        return {
-            "id": self.id,
-            "name": self.name,
-            "icon": self.icon,
-            "description": self.description,
-            "status": self.status,
-            "tech": self.tech,
-            "category": self.category,
-            "expertise": self.expertise,
-            "availability": self.availability,
-            "priority": self.priority,
-        }
-
-
-class EmareAIWorkforce:
-    """Tüm AI worker'ları yönet"""
-    
-    def __init__(self, projects_json_path: str):
-        self.projects_json_path = projects_json_path
-        self.workers: List[EmareAIWorker] = []
-        self.load_workers()
-        
-    def load_workers(self):
-        """Projects.json'dan tüm AI'ları yükle"""
-        try:
-            with open(self.projects_json_path, 'r', encoding='utf-8') as f:
-                projects_data = json.load(f)
-            
-            self.workers = [EmareAIWorker(project) for project in projects_data]
-            
-            logger.info(
-                "ai_workers_loaded",
-                total=len(self.workers),
-                production=sum(1 for w in self.workers if w.status == "production"),
-                development=sum(1 for w in self.workers if w.status == "development")
-            )
-            
-        except Exception as e:
-            logger.error("failed_to_load_workers", error=str(e))
-            raise
-    
-    def get_available_workers(self) -> List[EmareAIWorker]:
-        """Kullanılabilir worker'ları getir"""
-        return [w for w in self.workers if w.availability]
-    
-    def find_best_workers_for_task(
-        self, 
-        task_requirements: List[str],
-        max_workers: int = 5
-    ) -> List[EmareAIWorker]:
-        """
-        Task için en uygun worker'ları bul
-        
-        Args:
-            task_requirements: Gerekli uzmanlık alanları (örn: ["python", "backend", "ai"])
-            max_workers: Maksimum worker sayısı
-            
-        Returns:
-            Öncelik sırasına göre sıralanmış worker listesi
-        """
-        # Uygun worker'ları filtrele
-        suitable = [
-            w for w in self.workers 
-            if w.can_handle_task(task_requirements)
-        ]
-        
-        # Önceliğe göre sırala
-        suitable.sort(key=lambda w: w.priority, reverse=True)
-        
-        return suitable[:max_workers]
-    
-    def get_worker_by_id(self, worker_id: str) -> Optional[EmareAIWorker]:
-        """ID'ye göre worker bul"""
-        return next((w for w in self.workers if w.id == worker_id), None)
-    
-    def get_workforce_stats(self) -> Dict:
-        """İşgücü istatistikleri"""
-        return {
-            "total_workers": len(self.workers),
-            "available_workers": len(self.get_available_workers()),
-            "by_status": {
-                "production": sum(1 for w in self.workers if w.status == "production"),
-                "development": sum(1 for w in self.workers if w.status == "development"),
-                "ready": sum(1 for w in self.workers if w.status == "ready"),
-            },
-            "by_category": self._count_by_category(),
-            "expertise_coverage": self._count_expertise(),
-        }
-    
-    def _count_by_category(self) -> Dict[str, int]:
-        """Kategorilere göre dağılım"""
-        categories = {}
-        for worker in self.workers:
-            cat = worker.category
-            categories[cat] = categories.get(cat, 0) + 1
-        return categories
-    
-    def _count_expertise(self) -> Dict[str, int]:
-        """Uzmanlık alanlarına göre coverage"""
-        expertise = {}
-        for worker in self.workers:
-            for exp in worker.expertise:
-                expertise[exp] = expertise.get(exp, 0) + 1
-        return expertise
-
-
-# Singleton instance
-_workforce = None
-
-def get_workforce(projects_json_path: Optional[str] = None) -> EmareAIWorkforce:
-    """Workforce singleton'ı getir"""
-    global _workforce
-    
-    if _workforce is None:
-        if projects_json_path is None:
-            # Default path
-            projects_json_path = "/Users/emre/Desktop/Emare/emarework/EMARE_ORTAK_CALISMA/projects.json"
-        
-        _workforce = EmareAIWorkforce(projects_json_path)
-    
     return _workforce
 
 

@@ -2,10 +2,7 @@
 Hive Coordinator - Yapılandırma
 Production-ready settings with Pydantic
 """
-try:
-    from pydantic_settings import BaseSettings  # type: ignore
-except ImportError:
-    from pydantic import BaseSettings  # type: ignore
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from typing import Optional
 
@@ -65,11 +62,11 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     log_format: str = "json"
     
-    class Config:
-        """Pydantic ayar yapılandırması"""
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "ignore"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
 
 @lru_cache

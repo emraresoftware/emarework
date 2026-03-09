@@ -33,6 +33,8 @@ from src.emare_workers import get_workforce
 from src.project_splitter import SoftwareProject, ProjectSplitter
 from src.project_orchestrator import get_orchestrator
 from src.emare_ecosystem import get_ecosystem
+from src.dergah_sohbet import get_dergah
+from src.dervish_capabilities import get_capabilities, get_all_capabilities, get_capabilities_summary
 from pydantic import BaseModel
 from typing import List
 import structlog
@@ -54,6 +56,9 @@ orchestrator = get_orchestrator()
 ecosystem = get_ecosystem()
 project_splitter = ProjectSplitter()
 
+# Dergah Sohbet Odası
+dergah = get_dergah()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -69,6 +74,10 @@ async def lifespan(app: FastAPI):
     
     # Kök düğümü oluştur (memory-based engine için)
     await engine.register_node("L0", name="Genel Koordinatör")
+    
+    # Servisleri birbirine bağla (entegrasyon)
+    engine.set_message_cascade(msg_cascade)
+    engine.set_task_distributor(task_dist)
     
     yield
     
@@ -438,24 +447,88 @@ async def send_report(
     }
 
 @app.get("/nodes/{address}/inbox", tags=["Mesajlar"])
-async def get_node_inbox(address: str):
+async def get_node_inbox(address: str, unread_only: bool = False):
     """Düğümün gelen kutusu"""
-    messages = msg_cascade.get_inbox(address)
+    messages = msg_cascade.get_inbox(address, unread_only=unread_only)
+    read_set = msg_cascade.node_read.get(address, set())
     return {
         "address": address,
         "message_count": len(messages),
+        "unread_count": msg_cascade.get_unread_count(address),
         "messages": [
             {
                 "uid": m.message_uid,
                 "type": m.message_type,
                 "sender": m.sender,
                 "subject": m.subject,
+                "body": m.body,
                 "created_at": m.created_at.isoformat(),
                 "priority": m.priority,
+                "is_read": m.message_uid in read_set,
             }
             for m in messages
         ],
     }
+
+
+@app.post("/messages/peer", tags=["Mesajlar"])
+async def send_peer_message(
+    sender: str,
+    recipient: str,
+    subject: str,
+    body: str = "",
+):
+    """Eşler arası doğrudan mesaj gönder"""
+    msg = await msg_cascade.send_peer_message(
+        sender=sender,
+        recipient=recipient,
+        subject=subject,
+        body=body,
+    )
+    return {
+        "message_uid": msg.message_uid,
+        "type": "peer",
+        "sender": msg.sender,
+        "recipient": msg.recipient,
+        "cascade_reached": msg.cascade_reached,
+    }
+
+
+@app.put("/nodes/{address}/inbox/{message_uid}/read", tags=["Mesajlar"])
+async def mark_message_read(address: str, message_uid: str):
+    """Mesajı okundu olarak işaretle"""
+    success = msg_cascade.mark_as_read(address, message_uid)
+    if not success:
+        raise HTTPException(status_code=404, detail="Mesaj bulunamadı")
+    return {"address": address, "message_uid": message_uid, "is_read": True}
+
+
+@app.put("/nodes/{address}/inbox/read-all", tags=["Mesajlar"])
+async def mark_all_messages_read(address: str):
+    """Düğümün tüm mesajlarını okundu işaretle"""
+    count = msg_cascade.mark_all_as_read(address)
+    return {"address": address, "marked_read": count}
+
+
+@app.delete("/nodes/{address}/inbox/{message_uid}", tags=["Mesajlar"])
+async def delete_message(address: str, message_uid: str):
+    """Gelen kutusundan mesaj sil"""
+    success = msg_cascade.delete_message(address, message_uid)
+    if not success:
+        raise HTTPException(status_code=404, detail="Mesaj bulunamadı")
+    return {"address": address, "message_uid": message_uid, "deleted": True}
+
+
+@app.get("/nodes/{address}/messages/stats", tags=["Mesajlar"])
+async def get_node_message_stats(address: str):
+    """Düğüm bazında mesaj istatistikleri"""
+    return msg_cascade.get_node_message_stats(address)
+
+
+@app.get("/messages/stats", tags=["Mesajlar"])
+async def get_message_statistics():
+    """Sistem geneli mesajlaşma istatistikleri"""
+    return msg_cascade.get_statistics()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -767,6 +840,14 @@ async def get_worker_detail(worker_id: str, memory: bool = False):
         raise HTTPException(status_code=404, detail="Worker bulunamadı")
     return worker.to_dict(include_memory=memory)
 
+
+class AssignTaskRequest(BaseModel):
+    title: str
+    description: str = ""
+    requirements: List[str] = []
+    max_workers: int = 3
+
+
 @app.post("/workers/task/rank", tags=["AI Workers"])
 async def rank_workers_for_task(req: AssignTaskRequest):
     """
@@ -1062,13 +1143,6 @@ async def emare_refresh_dosya_yapisi():
     return await ecosystem.refresh_dosya_yapisi()
 
 
-class AssignTaskRequest(BaseModel):
-    title: str
-    description: str = ""
-    requirements: List[str] = []
-    max_workers: int = 3
-
-
 @app.post("/emare/task/assign", tags=["Emare Ekosistem"])
 async def emare_assign_task(req: AssignTaskRequest):
     """
@@ -1105,3 +1179,229 @@ async def emare_assign_task(req: AssignTaskRequest):
             "name": best_workers[0].name,
         },
     }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DERGAH SOHBET ODASI
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class DergahSendRequest(BaseModel):
+    room: str = "genel"
+    sender_id: str
+    sender_name: str
+    content: str
+    sender_icon: str = "🧙‍♂️"
+    message_type: str = "chat"
+    metadata: dict = {}
+    reply_to: Optional[str] = None
+
+
+class DergahReactionRequest(BaseModel):
+    emoji: str
+    sender_id: str
+
+
+class DergahGithubEventRequest(BaseModel):
+    event_type: str  # push, issue, pr, webhook, deploy
+    repo_name: str
+    description: str
+    url: str = ""
+    actor: str = ""
+
+
+class DergahFileShareRequest(BaseModel):
+    room: str = "genel"
+    sender_id: str
+    sender_name: str
+    file_path: str
+    file_size: int = 0
+    description: str = ""
+    sender_icon: str = "🧙‍♂️"
+
+
+class DergahDeployRequest(BaseModel):
+    project_id: str
+    project_name: str
+    version: str = ""
+    status: str = "success"
+
+
+@app.get("/dergah/rooms", tags=["Dergah Sohbet"])
+async def dergah_rooms():
+    """Tüm dergah odalarını ve mesaj sayılarını getir."""
+    return dergah.get_rooms()
+
+
+@app.get("/dergah/messages", tags=["Dergah Sohbet"])
+async def dergah_messages(
+    room: str = "genel",
+    limit: int = 50,
+    before: Optional[str] = None,
+    after: Optional[str] = None,
+    message_type: Optional[str] = None,
+):
+    """Oda mesajlarını getir (pagination desteği)."""
+    return dergah.get_messages(room, limit, before, after, message_type)
+
+
+@app.post("/dergah/messages", tags=["Dergah Sohbet"])
+async def dergah_send(req: DergahSendRequest):
+    """Dergah odasına mesaj gönder."""
+    msg = dergah.send_message(
+        room=req.room,
+        sender_id=req.sender_id,
+        sender_name=req.sender_name,
+        content=req.content,
+        sender_icon=req.sender_icon,
+        message_type=req.message_type,
+        metadata=req.metadata,
+        reply_to=req.reply_to,
+    )
+    return msg.to_dict()
+
+
+@app.get("/dergah/messages/{uid}", tags=["Dergah Sohbet"])
+async def dergah_get_message(uid: str):
+    """Tek mesaj getir."""
+    msg = dergah.get_message(uid)
+    if not msg:
+        raise HTTPException(404, "Mesaj bulunamadı")
+    return msg
+
+
+@app.delete("/dergah/messages/{uid}", tags=["Dergah Sohbet"])
+async def dergah_delete_message(uid: str):
+    """Mesajı sil."""
+    ok = dergah.delete_message(uid)
+    if not ok:
+        raise HTTPException(404, "Mesaj bulunamadı")
+    return {"deleted": True, "uid": uid}
+
+
+@app.post("/dergah/messages/{uid}/reaction", tags=["Dergah Sohbet"])
+async def dergah_add_reaction(uid: str, req: DergahReactionRequest):
+    """Mesaja reaksiyon ekle."""
+    ok = dergah.add_reaction(uid, req.emoji, req.sender_id)
+    if not ok:
+        raise HTTPException(404, "Mesaj bulunamadı")
+    return {"ok": True}
+
+
+@app.delete("/dergah/messages/{uid}/reaction", tags=["Dergah Sohbet"])
+async def dergah_remove_reaction(uid: str, req: DergahReactionRequest):
+    """Reaksiyonu kaldır."""
+    ok = dergah.remove_reaction(uid, req.emoji, req.sender_id)
+    return {"ok": ok}
+
+
+@app.post("/dergah/messages/{uid}/pin", tags=["Dergah Sohbet"])
+async def dergah_pin(uid: str):
+    """Mesajı sabitle."""
+    ok = dergah.pin_message(uid)
+    if not ok:
+        raise HTTPException(404, "Mesaj bulunamadı")
+    return {"pinned": True}
+
+
+@app.delete("/dergah/messages/{uid}/pin", tags=["Dergah Sohbet"])
+async def dergah_unpin(uid: str):
+    """Sabitlenmiş mesajı kaldır."""
+    dergah.unpin_message(uid)
+    return {"unpinned": True}
+
+
+@app.get("/dergah/pinned", tags=["Dergah Sohbet"])
+async def dergah_pinned(room: str = "genel"):
+    """Sabitlenen mesajları getir."""
+    return dergah.get_pinned(room)
+
+
+@app.post("/dergah/github-event", tags=["Dergah Sohbet"])
+async def dergah_github_event(req: DergahGithubEventRequest):
+    """GitHub olayını dergaha bildir."""
+    msg = dergah.notify_github_event(
+        event_type=req.event_type,
+        repo_name=req.repo_name,
+        description=req.description,
+        url=req.url,
+        actor=req.actor,
+    )
+    return msg.to_dict()
+
+
+@app.post("/dergah/file-share", tags=["Dergah Sohbet"])
+async def dergah_file_share(req: DergahFileShareRequest):
+    """Dosya paylaşımı gönder."""
+    msg = dergah.share_file(
+        room=req.room,
+        sender_id=req.sender_id,
+        sender_name=req.sender_name,
+        file_path=req.file_path,
+        file_size=req.file_size,
+        description=req.description,
+        sender_icon=req.sender_icon,
+    )
+    return msg.to_dict()
+
+
+@app.post("/dergah/deploy-notify", tags=["Dergah Sohbet"])
+async def dergah_deploy_notify(req: DergahDeployRequest):
+    """Deploy bildirimini dergaha gönder."""
+    msg = dergah.notify_deploy(
+        project_id=req.project_id,
+        project_name=req.project_name,
+        version=req.version,
+        status=req.status,
+    )
+    return msg.to_dict()
+
+
+@app.post("/dergah/heartbeat/{dervis_id}", tags=["Dergah Sohbet"])
+async def dergah_heartbeat(dervis_id: str):
+    """Dervişin online olduğunu bildir."""
+    dergah.heartbeat(dervis_id)
+    return {"ok": True, "dervis_id": dervis_id}
+
+
+@app.get("/dergah/online", tags=["Dergah Sohbet"])
+async def dergah_online(timeout: int = 5):
+    """Online dervişleri getir."""
+    return dergah.get_online_dervishes(timeout)
+
+
+@app.get("/dergah/search", tags=["Dergah Sohbet"])
+async def dergah_search(q: str, room: Optional[str] = None, limit: int = 20):
+    """Dergah mesajlarında arama."""
+    return dergah.search_messages(q, room, limit)
+
+
+@app.get("/dergah/stats", tags=["Dergah Sohbet"])
+async def dergah_stats():
+    """Dergah istatistikleri."""
+    return dergah.get_stats()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DERVİŞ YETENEKLERİ (CAPABILITIES)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@app.get("/dervish/capabilities", tags=["Derviş Yetenekleri"])
+async def dervish_all_capabilities():
+    """Tüm dervişlerin yeteneklerini getir."""
+    return get_all_capabilities()
+
+
+@app.get("/dervish/capabilities/summary", tags=["Derviş Yetenekleri"])
+async def dervish_capabilities_summary():
+    """Derviş yetenekleri özet istatistikleri."""
+    return get_capabilities_summary()
+
+
+@app.get("/dervish/{dervish_id}/capabilities", tags=["Derviş Yetenekleri"])
+async def dervish_capabilities(dervish_id: str):
+    """Tek dervişin tüm yeteneklerini getir (iç/dış API'ler, servisler, entegrasyonlar)."""
+    caps = get_capabilities(dervish_id)
+    if not caps:
+        raise HTTPException(404, f"Derviş bulunamadı: {dervish_id}")
+    return {"dervish_id": dervish_id, **caps}
+

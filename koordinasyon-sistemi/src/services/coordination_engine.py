@@ -76,6 +76,20 @@ class CoordinationEngine:
         self.nodes: dict[str, LiveNode] = {}
         self._running = False
         self._aggregation_interval = 30  # saniye
+        
+        # Entegre servisler (setter injection - döngüsel import önlemi)
+        self._message_cascade = None  # MessageCascade referansı
+        self._task_distributor = None  # TaskDistributor referansı
+    
+    def set_message_cascade(self, cascade) -> None:
+        """MessageCascade servisini engine'e bağla"""
+        self._message_cascade = cascade
+        logger.info("mesaj_sistemi_bağlandı")
+    
+    def set_task_distributor(self, distributor) -> None:
+        """TaskDistributor servisini engine'e bağla"""
+        self._task_distributor = distributor
+        logger.info("görev_dağıtıcı_bağlandı")
     
     # ─── Düğüm Yönetimi ─────────────────────────────────────────────────
 
@@ -131,6 +145,13 @@ class CoordinationEngine:
         
         # Ebeveynin toplu metriklerini güncelle
         await self._propagate_status_change(address)
+        
+        # Kritik durum değişimlerinde otomatik mesaj gönder
+        await self._notify_status_change(address, old_status, status)
+        
+        # Yük kontrolü — aşırı yükte de bildirim
+        if load is not None and node.load_pct > 90:
+            await self._notify_overload(address)
     
     # ─── Durum Toplama (Aggregation) ─────────────────────────────────────
     
@@ -405,13 +426,81 @@ class CoordinationEngine:
     
     async def _get_pending_tasks(self, address: str) -> int:
         """Düğümün bekleyen görev sayısı"""
-        # TODO: TaskDistributor ile entegrasyon
-        return 0
+        if self._task_distributor is None:
+            return 0
+        tasks = self._task_distributor.get_node_tasks(address)
+        return sum(1 for t in tasks if t.status in ("pending", "assigned"))
     
     async def _get_pending_messages(self, address: str) -> int:
         """Düğümün okunmamış mesaj sayısı"""
-        # TODO: MessageCascade ile entegrasyon
-        return 0
+        if self._message_cascade is None:
+            return 0
+        return self._message_cascade.get_unread_count(address)
+    
+    # ─── Otomatik Mesajlaşma ─────────────────────────────────────────────
+    
+    async def _notify_status_change(
+        self, address: str, old_status: str, new_status: str
+    ):
+        """
+        Kritik durum değişimlerinde mesaj cascade üzerinden bildirim gönder.
+        
+        - offline → ebeveyne eskalasyon
+        - aşırı yük (>90%) → ebeveyne rapor
+        - active'e dönüş → ebeveyne rapor
+        """
+        if self._message_cascade is None:
+            return
+        
+        if old_status == new_status:
+            return
+        
+        node = self.nodes.get(address)
+        if not node:
+            return
+        
+        # Düğüm çevrimdışı oldu → eskalasyon
+        if new_status == "offline":
+            await self._message_cascade.send_report(
+                sender=address,
+                subject=f"[OTOMATİK] Düğüm çevrimdışı: {address}",
+                body=f"Düğüm {address} durumu {old_status} → offline olarak değişti.",
+                data={"event": "node_offline", "address": address},
+                escalate=True,
+            )
+            logger.warning("otomatik_eskalasyon", address=address, reason="offline")
+        
+        # Düğüm tekrar aktif oldu → bilgi raporu
+        elif new_status == "active" and old_status in ("offline", "maintenance"):
+            await self._message_cascade.send_report(
+                sender=address,
+                subject=f"[OTOMATİK] Düğüm tekrar aktif: {address}",
+                body=f"Düğüm {address} durumu {old_status} → active olarak değişti.",
+                data={"event": "node_recovered", "address": address},
+            )
+            logger.info("otomatik_bildirim", address=address, reason="recovered")
+    
+    async def _notify_overload(self, address: str):
+        """Aşırı yük tespitinde ebeveyne eskalasyon gönder"""
+        if self._message_cascade is None:
+            return
+        
+        node = self.nodes.get(address)
+        if not node or node.load_pct <= 90:
+            return
+        
+        await self._message_cascade.send_report(
+            sender=address,
+            subject=f"[OTOMATİK] Aşırı yük: {address} (%{node.load_pct:.0f})",
+            body=f"Düğüm {address} yükü %{node.load_pct:.0f} ile kritik seviyede.",
+            data={
+                "event": "node_overloaded",
+                "address": address,
+                "load_pct": node.load_pct,
+            },
+            escalate=True,
+        )
+        logger.warning("otomatik_eskalasyon", address=address, reason="overload")
     
     # ─── İstatistikler ───────────────────────────────────────────────────
     
